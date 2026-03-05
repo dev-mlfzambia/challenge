@@ -5,7 +5,7 @@
 ## 1. Install Dependencies
 
 ```bash
-npm install
+yarn install
 ```
 
 ---
