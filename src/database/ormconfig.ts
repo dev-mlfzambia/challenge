@@ -19,18 +19,4 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   cache: false,
   namingStrategy: new SnakeNamingStrategy(),
   subscribers: [UserSubscriber],
-  ssl:
-    process.env.NODE_ENV == 'development'
-      ? {
-          ca: readFileSync(path.join(process.env.PWD, './ca-certificate.crt')),
-          rejectUnauthorized: false,
-        }
-      : {
-          ca:
-            process.env.NODE_ENV === 'production' ||
-            process.env.NODE_ENV === 'staging'
-              ? readFileSync(path.join(process.env.PWD, './ca-certificate.crt'))
-              : undefined,
-          rejectUnauthorized: false,
-        },
 };

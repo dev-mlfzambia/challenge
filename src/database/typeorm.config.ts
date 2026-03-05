@@ -20,15 +20,4 @@ export const dataSource = new DataSource({
   namingStrategy: new SnakeNamingStrategy(),
   subscribers: [UserSubscriber],
   migrations: [__dirname + '/migrations/*{.js,.ts}'],
-  ssl:
-    process.env.NODE_ENV == 'development'
-      ? null
-      : {
-          ca:
-            process.env.NODE_ENV === 'production' ||
-            process.env.NODE_ENV === 'staging'
-              ? readFileSync(path.join(process.env.PWD, './ca-certificate.crt'))
-              : undefined,
-          rejectUnauthorized: false,
-        },
 });
