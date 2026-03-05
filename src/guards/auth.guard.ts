@@ -1,10 +1,14 @@
-// BUG: AuthGuard always allows access (bypasses authentication)
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import type { IAuthGuard, Type } from '@nestjs/passport';
+import { AuthGuard as NestAuthGuard } from '@nestjs/passport';
 
-@Injectable()
-export class AuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    // Always allow access
-    return true;
+export function AuthGuard(
+  options?: Partial<{ public: boolean }>,
+): Type<IAuthGuard> {
+  const strategies = ['jwt'];
+
+  if (options?.public) {
+    strategies.push('public');
   }
+
+  return NestAuthGuard(strategies);
 }
