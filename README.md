@@ -10,15 +10,27 @@ yarn install
 
 ---
 
+# Contribution Guidelines
+
+Contributions can be made through pull requests.
+
+- You can start by forking this repo
+- Clone the repo to your local
+- Checkout `main` branch: `git checkout main`
+- Pull upstream changes to stay updated: `git pull upstream main`
+- Create a new branch, for fix or feature contribution: `git checkout -b <fix/feature>-<short-description>`
+- Once you are ready and everything checks out, you can push to your forked repo and create a pull request against this repo
+- We will then review and approve
+
 # Database Setup
 
 Import the provided SQL database into PostgreSQL.
 
 ### Prerequisites
 
-* PostgreSQL installed and running
-* `psql` CLI available
-* `core_banking.sql` file in the project directory
+- PostgreSQL installed and running
+- `psql` CLI available
+- `core_banking.sql` file in the project directory
 
 ### Create Database
 
@@ -77,9 +89,9 @@ The endpoint should return the **office name as part of the group data**.
 
 **What the developer should do**
 
-* Find the endpoint responsible for fetching a group by ID.
-* Investigate why the office name is not being returned.
-* Update the code so that the office name is included in the response.
+- Find the endpoint responsible for fetching a group by ID.
+- Investigate why the office name is not being returned.
+- Update the code so that the office name is included in the response.
 
 **Expected result**
 
@@ -100,8 +112,8 @@ When a status is provided, the API should return **only groups that match that s
 
 **What the developer should do**
 
-* Identify where the groups query is executed.
-* Ensure the `status` parameter is actually used when retrieving groups.
+- Identify where the groups query is executed.
+- Ensure the `status` parameter is actually used when retrieving groups.
 
 **Expected result**
 
@@ -121,8 +133,8 @@ The project should **compile and run successfully**.
 
 **What the developer should do**
 
-* Identify the source of the build error.
-* Fix the incorrect or missing import.
+- Identify the source of the build error.
+- Fix the incorrect or missing import.
 
 **Expected result**
 
@@ -146,8 +158,8 @@ Endpoints that require authentication or specific roles should **properly enforc
 
 **What the developer should do**
 
-* Investigate how authentication and authorization are implemented.
-* Fix the logic so that only authorized users can access protected endpoints.
+- Investigate how authentication and authorization are implemented.
+- Fix the logic so that only authorized users can access protected endpoints.
 
 **Expected result**
 
@@ -157,11 +169,11 @@ Users without proper permissions should **not** be able to access restricted end
 
 # Tech Stack
 
-* **Framework:** NestJS
-* **Language:** TypeScript
-* **Database:** PostgreSQL
-* **ORM:** TypeORM
-* **Testing:** Jest
+- **Framework:** NestJS
+- **Language:** TypeScript
+- **Database:** PostgreSQL
+- **ORM:** TypeORM
+- **Testing:** Jest
 
 ---
 
