@@ -61,32 +61,66 @@ Your changes will then be reviewed.
 
 # Database Setup
 
-Import the provided SQL database into PostgreSQL.
+The project requires a PostgreSQL database populated using the provided `core_banking.sql` file.
 
 ## Prerequisites
 
-* PostgreSQL installed and running
-* `psql` CLI available
-* `core_banking.sql` located in the project directory
+Ensure the following are available:
 
-## Create Database
+* PostgreSQL installed and running
+* `psql` command-line tool
+* A PostgreSQL user with sufficient privileges (e.g., `postgres`)
+* The `core_banking.sql` file in the project directory
+
+---
+
+## 1. Create the Database
+
+If the database does not already exist, run:
 
 ```bash
 psql -h localhost -U postgres -c "CREATE DATABASE core_banking;"
 ```
 
-## Import Database
+You will be prompted for your PostgreSQL password.
+
+If the database already exists, you can skip this step.
+
+---
+
+## 2. Import the Database
+
+Run the following command to import the schema and data:
 
 ```bash
 psql -h localhost -U postgres -d core_banking < core_banking.sql
 ```
 
-## Verify Import
+This command loads all tables, relationships, and seed data into the `core_banking` database.
+
+---
+
+## 3. Verify the Import
+
+You can confirm the import was successful by listing the tables:
 
 ```bash
 psql -h localhost -U postgres -d core_banking
 \dt
 ```
+
+---
+
+## Example Full Workflow
+
+```bash
+psql -h localhost -U postgres -c "CREATE DATABASE core_banking;"
+psql -h localhost -U postgres -d core_banking < core_banking.sql
+psql -h localhost -U postgres -d core_banking
+\dt
+```
+
+---
 
 ## Demo Credentials
 
