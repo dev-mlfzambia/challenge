@@ -11,6 +11,23 @@ yarn install
 
 ---
 
+# Coding Challenge Duration
+
+Candidates are given **4 days to complete this coding challenge**.
+
+The **4-day period starts from the moment the challenge is received**.
+
+During this time, the candidate is expected to:
+
+* Identify the issues in the system
+* Implement the necessary fixes
+* Ensure the application builds and runs successfully
+* Submit their solution via a **Pull Request**
+
+Submissions received **after the 4-day window may not be considered**.
+
+---
+
 # Contribution Guidelines
 
 Contributions are welcome through pull requests.
