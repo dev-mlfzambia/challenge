@@ -1,73 +1,172 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+---
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+# Setup
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
+## 1. Install Dependencies
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Running the app
+---
+
+# Database Setup
+
+Import the provided SQL database into PostgreSQL.
+
+### Prerequisites
+
+* PostgreSQL installed and running
+* `psql` CLI available
+* `core_banking.sql` file in the project directory
+
+### Create Database
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+psql -h localhost -U postgres -c "CREATE DATABASE core_banking;"
 ```
 
-## Test
+### Import Database
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+psql -h localhost -U postgres -d core_banking < core_banking.sql
 ```
 
-## Support
+### Verify Import
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+psql -h localhost -U postgres -d core_banking
+\dt
+```
 
-## Stay in touch
+### Demo Credentials
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```
+Username: training
+Password: test@123
+```
 
-## License
+---
 
-Nest is [MIT licensed](LICENSE).
+# Running the Application
+
+### Development
+
+```bash
+yarn run start:dev
+```
+
+---
+
+# Known Issues
+
+The system contains a few intentional issues.
+Your task is to **identify the cause and fix them so the system behaves correctly**.
+
+---
+
+## 1. Group Endpoint Missing `officeName`
+
+**Problem**
+
+When retrieving a group by its ID, the response does not include the **office name**, even though the group belongs to an office.
+
+**What is expected**
+
+The endpoint should return the **office name as part of the group data**.
+
+**What the developer should do**
+
+* Find the endpoint responsible for fetching a group by ID.
+* Investigate why the office name is not being returned.
+* Update the code so that the office name is included in the response.
+
+**Expected result**
+
+When requesting a group, the API response should include the correct `officeName`.
+
+---
+
+## 2. Status Filter Ignored
+
+**Problem**
+
+The endpoint that retrieves groups allows a `status` filter, but the filter has **no effect**.
+Regardless of the value provided, the API returns all groups.
+
+**What is expected**
+
+When a status is provided, the API should return **only groups that match that status**.
+
+**What the developer should do**
+
+* Identify where the groups query is executed.
+* Ensure the `status` parameter is actually used when retrieving groups.
+
+**Expected result**
+
+If `status=ACTIVE` is provided, only active groups should be returned.
+
+---
+
+## 3. Build Failure
+
+**Problem**
+
+The project fails to start or build due to a **missing or incorrect import**.
+
+**What is expected**
+
+The project should **compile and run successfully**.
+
+**What the developer should do**
+
+* Identify the source of the build error.
+* Fix the incorrect or missing import.
+
+**Expected result**
+
+The project should start successfully using:
+
+```bash
+yarn run start:dev
+```
+
+---
+
+## 4. RBAC Bypass (Authentication Issue)
+
+**Problem**
+
+Protected endpoints are accessible **even when the user should not have permission**.
+
+**What is expected**
+
+Endpoints that require authentication or specific roles should **properly enforce access restrictions**.
+
+**What the developer should do**
+
+* Investigate how authentication and authorization are implemented.
+* Fix the logic so that only authorized users can access protected endpoints.
+
+**Expected result**
+
+Users without proper permissions should **not** be able to access restricted endpoints.
+
+---
+
+# Tech Stack
+
+* **Framework:** NestJS
+* **Language:** TypeScript
+* **Database:** PostgreSQL
+* **ORM:** TypeORM
+* **Testing:** Jest
+
+---
+
+# License
+
+MIT License.
+
+---
