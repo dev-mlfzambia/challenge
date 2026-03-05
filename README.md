@@ -1,3 +1,4 @@
+
 ---
 
 # Setup
@@ -12,46 +13,65 @@ yarn install
 
 # Contribution Guidelines
 
-Contributions can be made through pull requests.
+Contributions are welcome through pull requests.
 
-- You can start by forking this repo
-- Clone the repo to your local
-- Checkout `main` branch: `git checkout main`
-- Pull upstream changes to stay updated: `git pull upstream main`
-- Create a new branch, for fix or feature contribution: `git checkout -b <fix/feature>-<short-description>`
-- Once you are ready and everything checks out, you can push to your forked repo and create a pull request against this repo
-- We will then review and approve
+1. Fork this repository.
+2. Clone your fork locally.
+3. Checkout the `main` branch:
+
+```bash
+git checkout main
+```
+
+4. Pull the latest changes:
+
+```bash
+git pull upstream main
+```
+
+5. Create a new branch for your fix or feature:
+
+```bash
+git checkout -b <fix/feature>-<short-description>
+```
+
+6. Commit your changes and push to your fork.
+7. Open a Pull Request against this repository.
+
+Your changes will then be reviewed.
+
+---
 
 # Database Setup
 
 Import the provided SQL database into PostgreSQL.
 
-### Prerequisites
+## Prerequisites
 
-- PostgreSQL installed and running
-- `psql` CLI available
-- `core_banking.sql` file in the project directory
+* PostgreSQL installed and running
+* `psql` CLI available
+* `core_banking.sql` located in the project directory
 
-### Create Database
+## Create Database
 
 ```bash
 psql -h localhost -U postgres -c "CREATE DATABASE core_banking;"
 ```
 
-### Import Database
+## Import Database
 
 ```bash
 psql -h localhost -U postgres -d core_banking < core_banking.sql
 ```
 
-### Verify Import
+## Verify Import
 
 ```bash
 psql -h localhost -U postgres -d core_banking
 \dt
 ```
 
-### Demo Credentials
+## Demo Credentials
 
 ```
 Username: training
@@ -65,115 +85,116 @@ Password: test@123
 ### Development
 
 ```bash
-yarn run start:dev
+yarn start:dev
 ```
 
 ---
 
 # Known Issues
 
-The system contains a few intentional issues.
-Your task is to **identify the cause and fix them so the system behaves correctly**.
+This project contains **intentional issues** meant for debugging and evaluation.
+
+Your task is to **identify the cause and implement the correct fix** so the system behaves as expected.
 
 ---
 
 ## 1. Group Endpoint Missing `officeName`
 
-**Problem**
+### Problem
 
-When retrieving a group by its ID, the response does not include the **office name**, even though the group belongs to an office.
+When retrieving a group by its ID, the API response does not include the **office name**, even though the group belongs to an office.
 
-**What is expected**
+### Expected Behavior
 
 The endpoint should return the **office name as part of the group data**.
 
-**What the developer should do**
+### Developer Task
 
-- Find the endpoint responsible for fetching a group by ID.
-- Investigate why the office name is not being returned.
-- Update the code so that the office name is included in the response.
+* Locate the endpoint responsible for retrieving a group by ID.
+* Investigate why the office name is not included.
+* Update the query or response mapping so the office name is returned.
 
-**Expected result**
+### Expected Result
 
-When requesting a group, the API response should include the correct `officeName`.
+The API response should include the correct `officeName`.
 
 ---
 
 ## 2. Status Filter Ignored
 
-**Problem**
+### Problem
 
-The endpoint that retrieves groups allows a `status` filter, but the filter has **no effect**.
-Regardless of the value provided, the API returns all groups.
+The endpoint that retrieves groups accepts a `status` filter, but the filter has **no effect**.
+All groups are returned regardless of the provided value.
 
-**What is expected**
+### Expected Behavior
 
-When a status is provided, the API should return **only groups that match that status**.
+When a `status` parameter is provided, the API should return **only groups with that status**.
 
-**What the developer should do**
+### Developer Task
 
-- Identify where the groups query is executed.
-- Ensure the `status` parameter is actually used when retrieving groups.
+* Locate where the groups query is executed.
+* Ensure the `status` parameter is applied to the query.
 
-**Expected result**
+### Expected Result
 
-If `status=ACTIVE` is provided, only active groups should be returned.
+Providing `status=ACTIVE` should return **only active groups**.
 
 ---
 
 ## 3. Build Failure
 
-**Problem**
+### Problem
 
 The project fails to start or build due to a **missing or incorrect import**.
 
-**What is expected**
+### Expected Behavior
 
 The project should **compile and run successfully**.
 
-**What the developer should do**
+### Developer Task
 
-- Identify the source of the build error.
-- Fix the incorrect or missing import.
+* Identify the source of the build error.
+* Correct the missing or incorrect import.
 
-**Expected result**
+### Expected Result
 
-The project should start successfully using:
+The project should start successfully with:
 
 ```bash
-yarn run start:dev
+yarn start:dev
 ```
 
 ---
 
 ## 4. RBAC Bypass (Authentication Issue)
 
-**Problem**
+### Problem
 
-Protected endpoints are accessible **even when the user should not have permission**.
+Some protected endpoints are accessible **without the required permissions**.
 
-**What is expected**
+### Expected Behavior
 
-Endpoints that require authentication or specific roles should **properly enforce access restrictions**.
+Endpoints requiring authentication or specific roles should **properly enforce access restrictions**.
 
-**What the developer should do**
+### Developer Task
 
-- Investigate how authentication and authorization are implemented.
-- Fix the logic so that only authorized users can access protected endpoints.
+* Review how authentication and authorization are implemented.
+* Ensure role checks and guards are correctly applied.
 
-**Expected result**
+### Expected Result
 
-Users without proper permissions should **not** be able to access restricted endpoints.
+Users without the required permissions should **not be able to access restricted endpoints**.
 
 ---
 
 # Tech Stack
 
-- **Framework:** NestJS
-- **Language:** TypeScript
-- **Database:** PostgreSQL
-- **ORM:** TypeORM
-- **Testing:** Jest
+* **Framework:** NestJS
+* **Language:** TypeScript
+* **Database:** PostgreSQL
+* **ORM:** TypeORM
+* **Testing:** Jest
 
 ---
 
