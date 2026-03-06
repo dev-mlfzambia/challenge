@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { AbstractEntity } from '../../../common/abstract.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
@@ -36,7 +37,7 @@ export class GroupPackageEntity extends AbstractEntity<GroupPackageEntity> {
   username: string;
 
   @OneToMany(() => LoanEntity, (loan) => loan.groupPackage, { eager: true })
-  loans: LoanEntity[];
+  loans: Relation<LoanEntity>[];
 
   @Column({
     type: 'enum',
@@ -46,9 +47,9 @@ export class GroupPackageEntity extends AbstractEntity<GroupPackageEntity> {
   })
   status: GroupPackageStatus;
 
-   @Column({ type: 'date', nullable: false })
+  @Column({ type: 'date', nullable: false })
   expectedDisbursementDate: Date;
-  
+
   @CreateDateColumn()
   createdAt: Date;
 
@@ -76,13 +77,13 @@ export class GroupPackageEntity extends AbstractEntity<GroupPackageEntity> {
   officeId: string;
 
   @ManyToOne(() => OfficeEntity, (office) => office.id, { eager: true })
-  office: OfficeEntity;
+  office: Relation<OfficeEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.id, { eager: true })
-  user: UserEntity;
+  user: Relation<UserEntity>;
 
   @OneToMany(() => LoanScheduleEntity, (schedule) => schedule.groupPackage, {
     eager: true,
   })
-  schedule: LoanScheduleEntity[];
+  schedule: Relation<LoanScheduleEntity>[];
 }

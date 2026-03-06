@@ -1,6 +1,12 @@
 import { ClientEntity } from 'src/modules/client/entities/client.entity';
 import { Town } from 'src/modules/town/entities/town.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 
 @Entity('provinces')
 export class Province {
@@ -11,8 +17,8 @@ export class Province {
   name: string;
 
   @OneToMany(() => Town, (town) => town.province)
-  towns: Town[];
+  towns: Relation<Town>[];
 
   @OneToMany(() => ClientEntity, (client) => client.province)
-  clients: ClientEntity[];
+  clients: Relation<ClientEntity>[];
 }

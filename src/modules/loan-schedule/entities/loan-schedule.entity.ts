@@ -5,6 +5,7 @@ import {
   JoinColumn,
   Index,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { AbstractEntity } from '../../../common/abstract.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
@@ -30,7 +31,7 @@ export class LoanScheduleEntity extends AbstractEntity {
 
   @ManyToOne(() => LoanEntity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'loan_id' })
-  loan: LoanEntity;
+  loan: Relation<LoanEntity>;
 
   @Column({ nullable: false })
   installmentNumber: number;
@@ -146,8 +147,8 @@ export class LoanScheduleEntity extends AbstractEntity {
   @ManyToOne(() => GroupPackageEntity, (g) => g.schedule, {
     nullable: false,
   })
-  groupPackage: GroupPackageEntity;
+  groupPackage: Relation<GroupPackageEntity>;
 
   @OneToMany(() => TransactionEntity, (transaction) => transaction.schedule)
-  transactions: TransactionEntity[];
+  transactions: Relation<TransactionEntity>[];
 }

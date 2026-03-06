@@ -1,7 +1,14 @@
-import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 import { AbstractEntity } from '../../../common/abstract.entity';
 import { ClientEntity } from '../../client/entities/client.entity';
-import { Product } from '../../product/entities/product.entity';
+// import { Product } from '../../product/entities/product.entity';
 import { UserEntity } from '../../user/user.entity';
 import { GroupEntity } from '../../group/entities/group.entity';
 import { OfficeEntity } from '../../office/entities/office.entity';
@@ -208,58 +215,58 @@ export class LoanEntity extends AbstractEntity implements ILoanEntity {
     nullable: false,
     eager: true,
   })
-  client: ClientEntity;
+  client: Relation<ClientEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.loans, {
     nullable: false,
     eager: true,
   })
-  staff: UserEntity;
+  staff: Relation<UserEntity>;
 
   @ManyToOne(() => GroupEntity, (group) => group.loans, {
     nullable: true,
     eager: true,
   })
-  group?: GroupEntity;
+  group?: Relation<GroupEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.disbursedLoans, {
     nullable: true,
     eager: true,
   })
-  disbursedBy?: UserEntity;
+  disbursedBy?: Relation<UserEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.firstApprovedLoans, {
     nullable: true,
     eager: true,
   })
-  firstApprovedBy?: UserEntity;
+  firstApprovedBy?: Relation<UserEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.secondApprovedLoans, {
     nullable: true,
     eager: true,
   })
-  secondApprovalBy?: UserEntity;
+  secondApprovalBy?: Relation<UserEntity>;
 
   @ManyToOne(() => GroupPackageEntity, (groupPackage) => groupPackage.loans, {
     eager: false,
   })
-  groupPackage?: GroupPackageEntity;
+  groupPackage?: Relation<GroupPackageEntity>;
 
   @ManyToOne(() => OfficeEntity, (office) => office.loans, {
     nullable: false,
     eager: true,
   })
-  office: OfficeEntity;
+  office: Relation<OfficeEntity>;
 
   @ManyToOne(() => StatusEntity, (status) => status.loans, {
     nullable: false,
     eager: true,
   })
-  statusEntity: StatusEntity;
+  statusEntity: Relation<StatusEntity>;
 
   @OneToMany(() => LoanScheduleEntity, (schedule) => schedule.loan)
-  schedule: LoanScheduleEntity[];
+  schedule: Relation<LoanScheduleEntity>[];
 
   @OneToMany(() => TransactionEntity, (transaction) => transaction.loan)
-  transactions: TransactionEntity[];
+  transactions: Relation<TransactionEntity>[];
 }

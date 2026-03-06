@@ -1,5 +1,5 @@
 import { IAbstractEntity, AbstractEntity } from '../../common/abstract.entity';
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, Relation } from 'typeorm';
 import { UserDto } from './dtos/user.dto';
 import { OfficeEntity } from '../office/entities/office.entity';
 import { RoleType } from 'src/constants';
@@ -47,20 +47,20 @@ export class UserEntity extends AbstractEntity<UserDto> implements IUserEntity {
   phone: string;
 
   @ManyToOne(() => OfficeEntity, (office) => office.users, { eager: true })
-  office: OfficeEntity;
+  office: Relation<OfficeEntity>;
 
   @OneToMany(() => LoanEntity, (loan) => loan.staff)
-  loans: LoanEntity[];
+  loans: Relation<LoanEntity>[];
 
   @OneToMany(() => LoanEntity, (loan) => loan.disbursedBy)
-  disbursedLoans: LoanEntity[];
+  disbursedLoans: Relation<LoanEntity>[];
 
   @OneToMany(() => LoanEntity, (loan) => loan.firstApprovedBy)
-  firstApprovedLoans: LoanEntity[];
+  firstApprovedLoans: Relation<LoanEntity>[];
 
   @OneToMany(() => LoanEntity, (loan) => loan.secondApprovalBy)
-  secondApprovedLoans: LoanEntity[];
+  secondApprovedLoans: Relation<LoanEntity>[];
 
   @OneToMany(() => TransactionEntity, (transaction) => transaction.collectedBy)
-  collectedTransactions: TransactionEntity[];
+  collectedTransactions: Relation<TransactionEntity>[];
 }

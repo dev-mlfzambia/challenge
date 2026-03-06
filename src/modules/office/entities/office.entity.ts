@@ -9,6 +9,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { UserEntity } from 'src/modules/user/user.entity';
 import { OfficeDto } from '../dto/office.dto';
@@ -37,17 +38,17 @@ export class OfficeEntity
   openingDate: Date;
 
   @OneToMany(() => OfficeEntity, (office) => office.parent)
-  children: OfficeEntity[];
+  children: Relation<OfficeEntity>[];
 
   @ManyToOne(() => OfficeEntity, (office) => office.children, {
     nullable: true,
   })
   @JoinColumn({ name: 'parentId' })
-  parent: OfficeEntity;
+  parent: Relation<OfficeEntity>;
 
   @OneToMany(() => UserEntity, (user) => user.office)
-  users: UserEntity[];
+  users: Relation<UserEntity>[];
 
   @OneToMany(() => LoanEntity, (loan) => loan.office)
-  loans: LoanEntity[];
+  loans: Relation<LoanEntity>[];
 }
