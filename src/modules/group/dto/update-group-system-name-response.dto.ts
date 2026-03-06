@@ -24,16 +24,16 @@ export class UpdateGroupSystemNameResponseDto {
   @ApiProperty({ description: 'Success message' })
   message: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Update timestamp',
     type: 'string',
-    format: 'date-time'
+    format: 'date-time',
   })
   updatedAt: Date;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Center information',
-    type: CenterInfoDto
+    type: CenterInfoDto,
   })
   center: CenterInfoDto;
 }

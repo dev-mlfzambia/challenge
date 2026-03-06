@@ -22,7 +22,7 @@ import { GenderService } from './gender.service';
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/genders')
 export class GenderController {
-  constructor(private readonly genderService: GenderService) { }
+  constructor(private readonly genderService: GenderService) {}
 
   @Auth([RoleType.SUPER_USER])
   @Post()
@@ -42,7 +42,12 @@ export class GenderController {
   @Get('deleted')
   async findDeleted(@Query() query: PageOptionsDto) {
     const { data, meta } = await this.genderService.findDeleted(query);
-    return PageResponseDto.from(data, meta, 'Soft-deleted genders retrieved successfully', true);
+    return PageResponseDto.from(
+      data,
+      meta,
+      'Soft-deleted genders retrieved successfully',
+      true,
+    );
   }
 
   @Get(':id')

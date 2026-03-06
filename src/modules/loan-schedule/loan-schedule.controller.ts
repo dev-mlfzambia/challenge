@@ -19,7 +19,7 @@ import { LoanScheduleStatus } from '../../constants/loan-schedule-status';
 @ApiTags('Loan Schedule')
 @Controller('api/v1/loan-schedule')
 export class LoanScheduleController {
-  constructor(private readonly loanScheduleService: LoanScheduleService) { }
+  constructor(private readonly loanScheduleService: LoanScheduleService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -35,8 +35,14 @@ export class LoanScheduleController {
   @Get('deleted')
   @HttpCode(HttpStatus.OK)
   async findDeleted(@Query() pageOptionsDto: any) {
-    const { data, meta } = await this.loanScheduleService.findDeleted(pageOptionsDto);
-    return { data, meta, message: 'Soft deleted loan schedules retrieved successfully' };
+    const { data, meta } = await this.loanScheduleService.findDeleted(
+      pageOptionsDto,
+    );
+    return {
+      data,
+      meta,
+      message: 'Soft deleted loan schedules retrieved successfully',
+    };
   }
 
   @Get()

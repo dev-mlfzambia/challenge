@@ -76,7 +76,7 @@ export class PackageLoanSchedulesDto {
     this.packageAmount = packageData.amount;
     this.totalExpectedRepayment = packageData.totalExpectedRepayment;
 
-    this.loans = loansWithSchedules.map(loanData => ({
+    this.loans = loansWithSchedules.map((loanData) => ({
       loan: {
         id: loanData.loan.id,
         principal: loanData.loan.principal,
@@ -95,7 +95,7 @@ export class PackageLoanSchedulesDto {
           mobileNumber: loanData.loan.client.mobileNumber,
           email: loanData.loan.client.emailAddress,
           gender: loanData.loan.client.gender,
-        }
+        },
       },
       schedules: loanData.schedules.map((schedule: any) => ({
         id: schedule.id,
@@ -114,7 +114,7 @@ export class PackageLoanSchedulesDto {
         penaltyPaid: schedule.penaltyPaid,
         applicationFeeDue: schedule.applicationFeeDue,
         applicationFeePaid: schedule.applicationFeePaid,
-      }))
+      })),
     }));
   }
 }

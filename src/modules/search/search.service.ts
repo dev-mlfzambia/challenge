@@ -5,11 +5,11 @@ import { Center } from '../center/entities/center.entity';
 import { GroupEntity } from '../group/entities/group.entity';
 import { UserEntity } from '../user/user.entity';
 import { OfficeEntity } from '../office/entities/office.entity';
-import { 
-  SearchQueryDto, 
-  SearchResponseDto, 
-  SearchResultDto, 
-  SearchEntityType 
+import {
+  SearchQueryDto,
+  SearchResponseDto,
+  SearchResultDto,
+  SearchEntityType,
 } from './dto';
 import { CenterDto } from '../center/dto/center.dto';
 import { GroupDto } from '../group/dto/group.dto';
@@ -29,7 +29,7 @@ export class SearchService {
     @InjectRepository(OfficeEntity)
     private readonly officeRepository: Repository<OfficeEntity>,
     @InjectRepository(ClientEntity)
-    private readonly clientRepository: Repository<ClientEntity>
+    private readonly clientRepository: Repository<ClientEntity>,
   ) {}
 
   async search(
@@ -37,48 +37,92 @@ export class SearchService {
     currentUser: UserEntity,
   ): Promise<SearchResponseDto> {
     const startTime = Date.now();
-    
+
     // Get office IDs that the user can access
     const accessibleOfficeIds = await this.getAccessibleOfficeIds(currentUser);
-    
+
     const { query, entityType, take, skip, order } = searchQuery;
 
-  let centers: SearchResultDto<{ id: string; name: string }> = new SearchResultDto(0, []);
-  let groups: SearchResultDto<{ id: string; name: string }> = new SearchResultDto(0, []);
-  let staff: SearchResultDto<{ id: string; name: string }> = new SearchResultDto(0, []);
-  let clients: SearchResultDto<{ id: string; firstName: string; nationalIdNumber: string }> = new SearchResultDto(0, []);
-
+    let centers: SearchResultDto<{ id: string; name: string }> =
+      new SearchResultDto(0, []);
+    let groups: SearchResultDto<{ id: string; name: string }> =
+      new SearchResultDto(0, []);
+    let staff: SearchResultDto<{ id: string; name: string }> =
+      new SearchResultDto(0, []);
+    let clients: SearchResultDto<{
+      id: string;
+      firstName: string;
+      nationalIdNumber: string;
+    }> = new SearchResultDto(0, []);
 
     // Search centers
-    if (entityType === SearchEntityType.ALL || entityType === SearchEntityType.CENTERS) {
-      centers = await this.searchCenters(query, accessibleOfficeIds, currentUser, take, skip, order);
+    if (
+      entityType === SearchEntityType.ALL ||
+      entityType === SearchEntityType.CENTERS
+    ) {
+      centers = await this.searchCenters(
+        query,
+        accessibleOfficeIds,
+        currentUser,
+        take,
+        skip,
+        order,
+      );
     }
 
     // Search groups
-    if (entityType === SearchEntityType.ALL || entityType === SearchEntityType.GROUPS) {
-      groups = await this.searchGroups(query, accessibleOfficeIds, currentUser, take, skip, order);
+    if (
+      entityType === SearchEntityType.ALL ||
+      entityType === SearchEntityType.GROUPS
+    ) {
+      groups = await this.searchGroups(
+        query,
+        accessibleOfficeIds,
+        currentUser,
+        take,
+        skip,
+        order,
+      );
     }
 
     // Search staff
-    if (entityType === SearchEntityType.ALL || entityType === SearchEntityType.STAFF) {
-      staff = await this.searchStaff(query, accessibleOfficeIds, take, skip, order);
+    if (
+      entityType === SearchEntityType.ALL ||
+      entityType === SearchEntityType.STAFF
+    ) {
+      staff = await this.searchStaff(
+        query,
+        accessibleOfficeIds,
+        take,
+        skip,
+        order,
+      );
     }
 
-       // Search client
-    if (entityType === SearchEntityType.ALL || entityType === SearchEntityType.CLIENT) {
-      clients = await this.searchClient(query, accessibleOfficeIds, take, skip, order);
+    // Search client
+    if (
+      entityType === SearchEntityType.ALL ||
+      entityType === SearchEntityType.CLIENT
+    ) {
+      clients = await this.searchClient(
+        query,
+        accessibleOfficeIds,
+        take,
+        skip,
+        order,
+      );
     }
 
     // const searchTime = Date.now() - startTime;
 
-  return new SearchResponseDto(centers, groups, staff, clients, query);
+    return new SearchResponseDto(centers, groups, staff, clients, query);
   }
 
   private async getAccessibleOfficeIds(user: UserEntity): Promise<string[]> {
     if (user.role === RoleType.SUPER_USER) {
       // Super users can access all offices
       const offices = await this.officeRepository.find();
-      return offices.map(office => office.id);
+      return offices.map((office) => office.id);
     }
 
     if (user.role === RoleType.LOAN_OFFICER) {
@@ -90,7 +134,9 @@ export class SearchService {
     return await this.getDescendantOfficeIds(user.office?.id);
   }
 
-  private async getDescendantOfficeIds(parentOfficeId: string): Promise<string[]> {
+  private async getDescendantOfficeIds(
+    parentOfficeId: string,
+  ): Promise<string[]> {
     if (!parentOfficeId) return [];
 
     const officeIds = [parentOfficeId];
@@ -121,16 +167,18 @@ export class SearchService {
 
     // Role-based filtering
     if (currentUser.role === RoleType.LOAN_OFFICER) {
-      queryBuilder.andWhere('center.user = :userId', { userId: currentUser.id });
+      queryBuilder.andWhere('center.user = :userId', {
+        userId: currentUser.id,
+      });
     }
 
     // Search conditions
     queryBuilder.andWhere(
       '(LOWER(center.name) ILIKE LOWER(:query) OR ' +
-      'LOWER(center.centerCode) ILIKE LOWER(:query) OR ' +
-      'LOWER(center.staffName) ILIKE LOWER(:query) OR ' +
-      'LOWER(center.officeName) ILIKE LOWER(:query))',
-      { query: `%${query}%` }
+        'LOWER(center.centerCode) ILIKE LOWER(:query) OR ' +
+        'LOWER(center.staffName) ILIKE LOWER(:query) OR ' +
+        'LOWER(center.officeName) ILIKE LOWER(:query))',
+      { query: `%${query}%` },
     );
 
     queryBuilder
@@ -139,9 +187,12 @@ export class SearchService {
       .take(take);
 
     const [centers, count] = await queryBuilder.getManyAndCount();
-  // Return only minimal data: id and name
-  const minimalCenters = centers.map(center => ({ id: center.id, name: center.name }));
-  return new SearchResultDto(count, minimalCenters);
+    // Return only minimal data: id and name
+    const minimalCenters = centers.map((center) => ({
+      id: center.id,
+      name: center.name,
+    }));
+    return new SearchResultDto(count, minimalCenters);
   }
 
   private async searchGroups(
@@ -171,11 +222,11 @@ export class SearchService {
     // Search conditions
     queryBuilder.andWhere(
       '(LOWER(group.name) ILIKE LOWER(:query) OR ' +
-      'LOWER(group.systemName) ILIKE LOWER(:query) OR ' +
-      'LOWER(group.staffName) ILIKE LOWER(:query) OR ' +
-      'LOWER(group.officeName) ILIKE LOWER(:query) OR ' +
-      'LOWER(center.name) ILIKE LOWER(:query))',
-      { query: `%${query}%` }
+        'LOWER(group.systemName) ILIKE LOWER(:query) OR ' +
+        'LOWER(group.staffName) ILIKE LOWER(:query) OR ' +
+        'LOWER(group.officeName) ILIKE LOWER(:query) OR ' +
+        'LOWER(center.name) ILIKE LOWER(:query))',
+      { query: `%${query}%` },
     );
 
     queryBuilder
@@ -184,9 +235,13 @@ export class SearchService {
       .take(take);
 
     const [groups, count] = await queryBuilder.getManyAndCount();
-  // Return only minimal data: id and name
-  const minimalGroups = groups.map(group => ({ id: group.id, name: group.name, systemName: group.systemName }));
-  return new SearchResultDto(count, minimalGroups);
+    // Return only minimal data: id and name
+    const minimalGroups = groups.map((group) => ({
+      id: group.id,
+      name: group.name,
+      systemName: group.systemName,
+    }));
+    return new SearchResultDto(count, minimalGroups);
   }
 
   private async searchStaff(
@@ -204,12 +259,12 @@ export class SearchService {
     // Search conditions
     queryBuilder.andWhere(
       '(LOWER(user.firstName) ILIKE LOWER(:query) OR ' +
-      'LOWER(user.lastName) ILIKE LOWER(:query) OR ' +
-      'LOWER(user.username) ILIKE LOWER(:query) OR ' +
-      'LOWER(user.email) ILIKE LOWER(:query) OR ' +
-      'LOWER(user.phone) ILIKE LOWER(:query) OR ' +
-      'LOWER(office.name) ILIKE LOWER(:query))',
-      { query: `%${query}%` }
+        'LOWER(user.lastName) ILIKE LOWER(:query) OR ' +
+        'LOWER(user.username) ILIKE LOWER(:query) OR ' +
+        'LOWER(user.email) ILIKE LOWER(:query) OR ' +
+        'LOWER(user.phone) ILIKE LOWER(:query) OR ' +
+        'LOWER(office.name) ILIKE LOWER(:query))',
+      { query: `%${query}%` },
     );
 
     queryBuilder
@@ -218,9 +273,12 @@ export class SearchService {
       .take(take);
 
     const [users, count] = await queryBuilder.getManyAndCount();
-  // Return only minimal data: id and name
-  const minimalStaff = users.map(user => ({ id: user.id, name: `${user.firstName} ${user.lastName}`.trim() }));
-  return new SearchResultDto(count, minimalStaff);
+    // Return only minimal data: id and name
+    const minimalStaff = users.map((user) => ({
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`.trim(),
+    }));
+    return new SearchResultDto(count, minimalStaff);
   }
 
   private async searchClient(
@@ -229,7 +287,9 @@ export class SearchService {
     take: number,
     skip: number,
     order: string,
-  ): Promise<SearchResultDto<{ id: string; firstName: string; nationalIdNumber: string }>> {
+  ): Promise<
+    SearchResultDto<{ id: string; firstName: string; nationalIdNumber: string }>
+  > {
     const queryBuilder = this.clientRepository
       .createQueryBuilder('client')
       .leftJoinAndSelect('client.office', 'office')
@@ -238,12 +298,12 @@ export class SearchService {
     // Search conditions: name, national_id_number, client_number, phone_number, email
     queryBuilder.andWhere(
       '(LOWER(client.firstName) ILIKE LOWER(:query) OR ' +
-      'LOWER(client.lastName) ILIKE LOWER(:query) OR ' +
-      'LOWER(client.nationalIdNumber) ILIKE LOWER(:query) OR ' +
-      // 'LOWER(client.bankAccountNumber) ILIKE LOWER(:query) OR ' +
-      'LOWER(client.mobileNumber) ILIKE LOWER(:query) OR ' +
-      'LOWER(client.emailAddress) ILIKE LOWER(:query))',
-      { query: `%${query}%` }
+        'LOWER(client.lastName) ILIKE LOWER(:query) OR ' +
+        'LOWER(client.nationalIdNumber) ILIKE LOWER(:query) OR ' +
+        // 'LOWER(client.bankAccountNumber) ILIKE LOWER(:query) OR ' +
+        'LOWER(client.mobileNumber) ILIKE LOWER(:query) OR ' +
+        'LOWER(client.emailAddress) ILIKE LOWER(:query))',
+      { query: `%${query}%` },
     );
 
     queryBuilder
@@ -251,13 +311,13 @@ export class SearchService {
       .skip(skip)
       .take(take);
 
-  const [clients, count] = await queryBuilder.getManyAndCount();
-  // Return only id, firstName, emailAddress, and nationalIdNumber
-  const minimalClients = clients.map(client => ({
-    id: client.id,
-    firstName: client.firstName,
-    nationalIdNumber: client.nationalIdNumber
-  }));
-  return new SearchResultDto(count, minimalClients);
+    const [clients, count] = await queryBuilder.getManyAndCount();
+    // Return only id, firstName, emailAddress, and nationalIdNumber
+    const minimalClients = clients.map((client) => ({
+      id: client.id,
+      firstName: client.firstName,
+      nationalIdNumber: client.nationalIdNumber,
+    }));
+    return new SearchResultDto(count, minimalClients);
   }
 }

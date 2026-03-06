@@ -19,9 +19,9 @@ export class AuditQueryOptions {
   endDate?: Date;
   ipAddress?: string;
   order: Order.DESC;
-  page: number = 1;
-  take: number = 20;
-  
+  page = 1;
+  take = 20;
+
   get skip(): number {
     return ((this.page || 1) - 1) * (this.take || 20);
   }
@@ -78,16 +78,18 @@ export class AuditService {
   /**
    * Find audit trails with pagination and filtering
    */
-  async findAuditTrails(options: AuditQueryOptions): Promise<PageResponseDto<Audit>> {
+  async findAuditTrails(
+    options: AuditQueryOptions,
+  ): Promise<PageResponseDto<Audit>> {
     const queryBuilder = this.auditRepository.createQueryBuilder('audit');
 
-     // Enforce default pagination values and prevent fetching all records
-  let page = Number(options.page);
-  let take = Number(options.take);
-  if (!page || page < 1) page = 1;
-  if (!take || take < 1 || take > 100) take = 20; // max 100 per page
-  options.page = page;
-  options.take = take;
+    // Enforce default pagination values and prevent fetching all records
+    let page = Number(options.page);
+    let take = Number(options.take);
+    if (!page || page < 1) page = 1;
+    if (!take || take < 1 || take > 100) take = 20; // max 100 per page
+    options.page = page;
+    options.take = take;
 
     // Apply filters
     if (options.auditableType) {
@@ -137,7 +139,7 @@ export class AuditService {
 
     // Apply pagination and ordering
     queryBuilder
-      .orderBy('audit.createdAt', options.order ||  Order.DESC)
+      .orderBy('audit.createdAt', options.order || Order.DESC)
       .skip((page - 1) * take)
       .take(take);
 
@@ -152,7 +154,11 @@ export class AuditService {
       } as PageOptionsDto,
     });
 
-    return PageResponseDto.from(entities, pageMetaDto, 'Audit trails retrieved successfully');
+    return PageResponseDto.from(
+      entities,
+      pageMetaDto,
+      'Audit trails retrieved successfully',
+    );
   }
 
   /**
@@ -169,7 +175,7 @@ export class AuditService {
     queryOptions.page = options?.page;
     queryOptions.take = options?.take;
     queryOptions.order = options?.order as Order.DESC;
-    
+
     // Get the result and update the message
     const result = await this.findAuditTrails(queryOptions);
     result.message = `Audit trail for ${auditableType} retrieved successfully`;
@@ -203,13 +209,10 @@ export class AuditService {
       .groupBy('audit.event')
       .getRawMany();
 
-    const auditsByEvent = eventStats.reduce(
-      (acc, stat) => {
-        acc[stat.event] = parseInt(stat.count);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const auditsByEvent = eventStats.reduce((acc, stat) => {
+      acc[stat.event] = parseInt(stat.count);
+      return acc;
+    }, {} as Record<string, number>);
 
     // Get counts by entity
     const entityStats = await queryBuilder
@@ -219,13 +222,10 @@ export class AuditService {
       .limit(10)
       .getRawMany();
 
-    const auditsByEntity = entityStats.reduce(
-      (acc, stat) => {
-        acc[stat.auditableType] = parseInt(stat.count);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const auditsByEntity = entityStats.reduce((acc, stat) => {
+      acc[stat.auditableType] = parseInt(stat.count);
+      return acc;
+    }, {} as Record<string, number>);
 
     // Get counts by user
     const userStats = await queryBuilder
@@ -236,21 +236,17 @@ export class AuditService {
       .limit(10)
       .getRawMany();
 
-    const auditsByUser = userStats.reduce(
-      (acc, stat) => {
-        acc[stat.userId] = parseInt(stat.count);
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
+    const auditsByUser = userStats.reduce((acc, stat) => {
+      acc[stat.userId] = parseInt(stat.count);
+      return acc;
+    }, {} as Record<string, number>);
 
-
-      return {
-        totalAudits,
-        auditsByEvent,
-        auditsByEntity,
-        auditsByUser,
-      };
+    return {
+      totalAudits,
+      auditsByEvent,
+      auditsByEntity,
+      auditsByUser,
+    };
   }
 
   /**
@@ -265,7 +261,7 @@ export class AuditService {
     queryOptions.page = options?.page;
     queryOptions.take = options?.take;
     queryOptions.order = options?.order as Order.DESC;
-    
+
     // Get the result and update the message
     const result = await this.findAuditTrails(queryOptions);
     result.message = 'User activity retrieved successfully';

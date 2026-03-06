@@ -8,5 +8,5 @@ export enum StatusEnum {
   PENDING = 'Pending',
   REVERSED = 'Reversed',
   AWAITING_DISBURSEMENT = 'Awaiting Disbursement',
-  Completed = 'Completed'
+  Completed = 'Completed',
 }

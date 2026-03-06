@@ -41,15 +41,18 @@ export class StatusController {
     return { data: statusDtos, meta };
   }
 
-
-
   @Auth([RoleType.SUPER_USER])
   @Get('deleted')
   async findDeleted(@Query() query: PageOptionsDto) {
     const { data, meta } = await this.statusService.findDeleted(query);
-    return PageResponseDto.from(data, meta, 'Soft-deleted statuses retrieved successfully', true);
+    return PageResponseDto.from(
+      data,
+      meta,
+      'Soft-deleted statuses retrieved successfully',
+      true,
+    );
   }
-  
+
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string): Promise<StatusDto> {

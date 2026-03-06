@@ -35,7 +35,7 @@ export class AddStatusToAuditTable1728640000000 implements MigrationInterface {
 
     // Check if status column already exists
     const columnExists = await queryRunner.hasColumn('audits', 'status');
-    
+
     // Add status column to audits table with enum constraint if it doesn't exist
     if (!columnExists) {
       await queryRunner.query(`
@@ -89,13 +89,13 @@ export class AddStatusToAuditTable1728640000000 implements MigrationInterface {
     if (indexExists[0].exists) {
       await queryRunner.query(`DROP INDEX "IDX_audit_status"`);
     }
-    
+
     // Check if status column exists before dropping it
     const columnExists = await queryRunner.hasColumn('audits', 'status');
     if (columnExists) {
       await queryRunner.query(`ALTER TABLE "audits" DROP COLUMN "status"`);
     }
-    
+
     // Check if enum type exists before dropping it
     const enumExists = await queryRunner.query(`
       SELECT EXISTS (

@@ -41,20 +41,23 @@ export class CenterMeetingDatesService {
     await this.centerMeetingDatesRepository.softDelete(id);
   }
 
-    async restore(id: string): Promise<void> {
-      await this.centerMeetingDatesRepository.restore(id);
-    }
+  async restore(id: string): Promise<void> {
+    await this.centerMeetingDatesRepository.restore(id);
+  }
 
-    async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: CenterMeetingDates[]; meta: PageMetaDto }> {
-      const queryBuilder = this.centerMeetingDatesRepository.createQueryBuilder('centerMeetingDates')
-        .withDeleted()
-        .where('centerMeetingDates.deletedAt IS NOT NULL')
-        .orderBy('centerMeetingDates.createdAt', pageOptionsDto.order)
-        .skip(pageOptionsDto.skip)
-        .take(pageOptionsDto.take);
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: CenterMeetingDates[]; meta: PageMetaDto }> {
+    const queryBuilder = this.centerMeetingDatesRepository
+      .createQueryBuilder('centerMeetingDates')
+      .withDeleted()
+      .where('centerMeetingDates.deletedAt IS NOT NULL')
+      .orderBy('centerMeetingDates.createdAt', pageOptionsDto.order)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-      const result = await queryBuilder.getMany();
-      const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
-      return { data: result, meta };
-    }
+    const result = await queryBuilder.getMany();
+    const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
+    return { data: result, meta };
+  }
 }

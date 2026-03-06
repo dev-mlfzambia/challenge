@@ -33,7 +33,7 @@ import { Response } from 'express';
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/loans')
 export class LoanController {
-  constructor(private readonly loanService: LoanService) { }
+  constructor(private readonly loanService: LoanService) {}
 
   @Auth([RoleType.SUPER_USER, RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER])
   @Get(':id/agreement')
@@ -98,8 +98,6 @@ export class LoanController {
     );
     return response;
   }
-
-
 
   @Auth([RoleType.LOAN_OFFICER])
   @Get('deleted')

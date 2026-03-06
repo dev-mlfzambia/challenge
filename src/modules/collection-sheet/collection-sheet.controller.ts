@@ -27,7 +27,7 @@ import { CollectionSheetsResponseDto } from './dto/collection-sheets-response.dt
 export class CollectionSheetController {
   constructor(
     private readonly collectionSheetService: CollectionSheetService,
-  ) { }
+  ) {}
 
   // Logging utility for controller
   private log(message: string, data?: any) {
@@ -37,10 +37,11 @@ export class CollectionSheetController {
   /**
    * Get collection sheet with filters
    */
-  @Auth([RoleType.LOAN_OFFICER,
-  RoleType.IT,
-  RoleType.BRANCH_MANAGER,
-  RoleType.SUPER_USER
+  @Auth([
+    RoleType.LOAN_OFFICER,
+    RoleType.IT,
+    RoleType.BRANCH_MANAGER,
+    RoleType.SUPER_USER,
   ])
   @HttpCode(HttpStatus.CREATED)
   @Get('/')
@@ -52,7 +53,12 @@ export class CollectionSheetController {
     @Req() req,
   ) {
     this.log('Fetching collection sheet with filters', filters);
-    const { itemCount, data } = await this.collectionSheetService.getCollectionSheet(filters, pageOptionsDto, req);
+    const { itemCount, data } =
+      await this.collectionSheetService.getCollectionSheet(
+        filters,
+        pageOptionsDto,
+        req,
+      );
     const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
     // Return grouped data by center and group directly
     const responseDto = CollectionSheetsResponseDto.from(data, pageMetaDto);
@@ -60,5 +66,4 @@ export class CollectionSheetController {
     this.log('Response DTO', responseDto);
     return responseDto;
   }
-
 }

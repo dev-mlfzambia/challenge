@@ -42,7 +42,7 @@ export class LoanOfficerMetricsDto {
 export class LoanOfficerMetricsResponseDto {
   message: string;
   data: LoanOfficerMetricsDto;
-  
+
   static from(data: LoanOfficerMetricsDto): LoanOfficerMetricsResponseDto {
     const response = new LoanOfficerMetricsResponseDto();
     response.data = data;

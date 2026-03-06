@@ -17,7 +17,7 @@ export class OfficeService {
   constructor(
     @InjectRepository(OfficeEntity)
     private officeRepo: Repository<OfficeEntity>,
-  ) { }
+  ) {}
 
   async create(createOfficeDto: CreateOfficeDto) {
     const doesHeadOfficeExist = await this.officeRepo.findOne({
@@ -90,7 +90,6 @@ export class OfficeService {
     return { id, deleted: true };
   }
 
-
   async softDelete(id: string): Promise<void> {
     await this.officeRepo.softDelete(id);
   }
@@ -99,19 +98,22 @@ export class OfficeService {
     await this.officeRepo.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: OfficeEntity[]; meta: PageMetaDto }> {
-      const queryBuilder = this.officeRepo.createQueryBuilder('office')
-        .withDeleted()
-        .where('office.deletedAt IS NOT NULL')
-        .orderBy('office.createdAt', pageOptionsDto.order)
-        .skip(pageOptionsDto.skip)
-        .take(pageOptionsDto.take);
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: OfficeEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.officeRepo
+      .createQueryBuilder('office')
+      .withDeleted()
+      .where('office.deletedAt IS NOT NULL')
+      .orderBy('office.createdAt', pageOptionsDto.order)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-      const result = await queryBuilder.getMany();
-      const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
-      return { data: result, meta };
+    const result = await queryBuilder.getMany();
+    const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
+    return { data: result, meta };
   }
-  
+
   async getAllOfficeIds(): Promise<string[]> {
     const offices = await this.officeRepo.find();
     return offices.map((office) => office.id);

@@ -24,14 +24,15 @@ interface SearchRequest extends Request {
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/search')
 export class SearchController {
-  constructor(private readonly searchService: SearchService) { }
+  constructor(private readonly searchService: SearchService) {}
 
   @Auth([RoleType.SUPER_USER, RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER])
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Scoped Search Across Portfolio Resources',
-    description: 'Search API allows scoped search across portfolio resources (centers, groups, staff, clients) within the user\'s office and portfolio access. Returns minimal data for each resource type.'
+    description:
+      "Search API allows scoped search across portfolio resources (centers, groups, staff, clients) within the user's office and portfolio access. Returns minimal data for each resource type.",
   })
   @ApiResponse({
     status: 200,

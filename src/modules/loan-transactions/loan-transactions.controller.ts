@@ -22,7 +22,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 @ApiTags('Loan Transactions')
 @Controller('api/v1/loan-transactions')
 export class LoanTransactionsController {
-  constructor(private readonly service: LoanTransactionsService) { }
+  constructor(private readonly service: LoanTransactionsService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -43,14 +43,22 @@ export class LoanTransactionsController {
     return response;
   }
 
-
   @Get('deleted')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Find all soft deleted loan transactions (paginated)' })
-  @ApiResponse({ status: 200, description: 'List of soft deleted loan transactions.' })
+  @ApiOperation({
+    summary: 'Find all soft deleted loan transactions (paginated)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of soft deleted loan transactions.',
+  })
   async findDeleted(@Query() pageOptionsDto: any) {
     const { data, meta } = await this.service.findDeleted(pageOptionsDto);
-    return { data, meta, message: 'Soft deleted loan transactions retrieved successfully' };
+    return {
+      data,
+      meta,
+      message: 'Soft deleted loan transactions retrieved successfully',
+    };
   }
 
   @Get()
@@ -180,7 +188,10 @@ export class LoanTransactionsController {
   @Post(':id/restore')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Restore a soft deleted loan transaction by ID' })
-  @ApiResponse({ status: 200, description: 'Loan transaction restored successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Loan transaction restored successfully.',
+  })
   async restore(@Param('id') id: string) {
     await this.service.restore(id);
   }

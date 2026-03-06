@@ -2,12 +2,18 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString } from 'class-validator';
 
 export class CollectionSheetFilterDto {
-  @ApiPropertyOptional({ description: 'Start date for due repayments (YYYY-MM-DD)', example: new Date() })
+  @ApiPropertyOptional({
+    description: 'Start date for due repayments (YYYY-MM-DD)',
+    example: new Date(),
+  })
   @IsOptional()
   @IsString()
   startDate?: string;
 
-  @ApiPropertyOptional({ description: 'End date for due repayments (YYYY-MM-DD)', example: new Date() })
+  @ApiPropertyOptional({
+    description: 'End date for due repayments (YYYY-MM-DD)',
+    example: new Date(),
+  })
   @IsOptional()
   @IsString()
   endDate?: string;
@@ -21,15 +27,15 @@ export class CollectionSheetFilterDto {
   @IsOptional()
   @IsString()
   staffId?: string;
-  @ApiPropertyOptional({ description: "Group UUID" })
+  @ApiPropertyOptional({ description: 'Group UUID' })
   @IsOptional()
   @IsString()
   groupId?: string;
 
   @ApiPropertyOptional({
-    description: "Grouping key (center, staff, group, client, office)",
-    enum: ["center", "staff", "group", "client", "office"],
-    example: "center"
+    description: 'Grouping key (center, staff, group, client, office)',
+    enum: ['center', 'staff', 'group', 'client', 'office'],
+    example: 'center',
   })
   @IsOptional()
   @IsString()

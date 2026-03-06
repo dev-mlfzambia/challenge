@@ -13,12 +13,17 @@ import { UserContextInterceptor } from '../../interceptors/user-context.intercep
   imports: [TypeOrmModule.forFeature([Audit])],
   controllers: [AuditController],
   providers: [
-    AuditService, 
-    AuditContextService, 
-    AuditSubscriber, 
+    AuditService,
+    AuditContextService,
+    AuditSubscriber,
     AuditAwareAuthGuard,
     UserContextInterceptor,
   ],
-  exports: [AuditService, AuditContextService, AuditAwareAuthGuard, UserContextInterceptor],
+  exports: [
+    AuditService,
+    AuditContextService,
+    AuditAwareAuthGuard,
+    UserContextInterceptor,
+  ],
 })
 export class AuditModule {}

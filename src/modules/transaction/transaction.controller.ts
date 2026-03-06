@@ -45,21 +45,23 @@ export class TransactionController {
     };
   }
 
-
-@Auth([RoleType.BRANCH_MANAGER, RoleType.SUPER_USER, RoleType.IT])
-   @Post('reverse')
+  @Auth([RoleType.BRANCH_MANAGER, RoleType.SUPER_USER, RoleType.IT])
+  @Post('reverse')
   async reverseTransaction(
     @Body() dto: ReverseTransactionDto,
     @Req() req: AuthRequest,
   ) {
     // Assuming user is attached to request by the auth guard
     const user = req.user;
-    dto.user = user;;
+    dto.user = user;
 
     // Attach the user to DTO
     dto.user = user;
 
-    const reversalTx = await this.transactionService.reverseTransaction(dto, user);
+    const reversalTx = await this.transactionService.reverseTransaction(
+      dto,
+      user,
+    );
     return {
       message: `Transaction ${dto.transactionId} reversed successfully`,
       reversalTransaction: reversalTx,

@@ -24,7 +24,7 @@ interface IRequest {
 
 @Controller('api/v1/offices')
 export class OfficeController {
-  constructor(private readonly officeService: OfficeService) { }
+  constructor(private readonly officeService: OfficeService) {}
 
   @Auth([RoleType.SUPER_USER])
   @Post()
@@ -53,7 +53,12 @@ export class OfficeController {
   async findDeleted(@Query() query: PageOptionsDto) {
     const { data, meta } = await this.officeService.findDeleted(query);
     const officeDto = data.map((office) => new OfficeDto(office));
-    return PageResponseDto.from(officeDto, meta, 'Soft-deleted offices retrieved successfully', true);
+    return PageResponseDto.from(
+      officeDto,
+      meta,
+      'Soft-deleted offices retrieved successfully',
+      true,
+    );
   }
 
   @Auth()

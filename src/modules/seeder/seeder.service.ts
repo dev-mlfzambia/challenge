@@ -14,6 +14,7 @@ import { BankEntity } from '../bank/entities/bank.entity';
 import { LoanEntity } from '../loan/entities/loan.entity';
 import { Language } from '../language/entities/language.entity';
 import * as fs from 'fs';
+import * as path from 'path';
 import { parse } from 'csv-parse';
 import { CreateClientDto } from '../client/dto';
 import { UserEntity } from '../user/user.entity';
@@ -98,7 +99,6 @@ export class SeederService {
   }
 
   async readCsvFile(): Promise<any[]> {
-    const path = require('path');
     const filePath = path.join(process.cwd(), 'Lusaka.csv');
     // console.log('filePath: ', filePath);
     return new Promise((resolve, reject) => {

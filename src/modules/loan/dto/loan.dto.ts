@@ -133,19 +133,20 @@ export class LoanDto extends AbstractDto {
 
     this.groupPackage = loan.groupPackage?.id ?? null;
 
-    this.schedule = loan.schedule?.map((s: LoanScheduleEntity) => ({
-      id: s.id,
-      dueDate: s.dueDate,
-      principalDue: s.principalDue,
-      interestDue: s.interestDue,
-      totalDue: s.totalDue,
-      status: s.status,
-      installmentNumber: s.installmentNumber,
-      principalPaid: s.principalPaid,
-      interestPaid: s.interestPaid,
-      paidDate: s.paidDate,
-      groupPackage: s.groupPackage?.id ?? null,
-      loan: s.loan?.id ?? null,
-    })) || [];
+    this.schedule =
+      loan.schedule?.map((s: LoanScheduleEntity) => ({
+        id: s.id,
+        dueDate: s.dueDate,
+        principalDue: s.principalDue,
+        interestDue: s.interestDue,
+        totalDue: s.totalDue,
+        status: s.status,
+        installmentNumber: s.installmentNumber,
+        principalPaid: s.principalPaid,
+        interestPaid: s.interestPaid,
+        paidDate: s.paidDate,
+        groupPackage: s.groupPackage?.id ?? null,
+        loan: s.loan?.id ?? null,
+      })) || [];
   }
 }

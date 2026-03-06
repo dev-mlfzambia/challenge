@@ -12,7 +12,7 @@ export class BankService {
   constructor(
     @InjectRepository(BankEntity)
     private bankRepository: Repository<BankEntity>,
-  ) { }
+  ) {}
 
   async create(createBankDto: CreateBankDto): Promise<BankEntity> {
     const bank = this.bankRepository.create(createBankDto);
@@ -52,7 +52,7 @@ export class BankService {
   async remove(id: string): Promise<void> {
     await this.bankRepository.delete(id);
   }
-  
+
   async softDelete(id: string): Promise<void> {
     await this.bankRepository.softDelete(id);
   }
@@ -61,17 +61,19 @@ export class BankService {
     await this.bankRepository.restore(id);
   }
 
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: BankEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.bankRepository
+      .createQueryBuilder('bank')
+      .withDeleted()
+      .where('bank.deletedAt IS NOT NULL')
+      .orderBy('bank.createdAt', pageOptionsDto.order ?? 'DESC')
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: BankEntity[]; meta: PageMetaDto }> {
-  const queryBuilder = this.bankRepository.createQueryBuilder('bank')
-    .withDeleted()
-    .where('bank.deletedAt IS NOT NULL')
-    .orderBy('bank.createdAt', pageOptionsDto.order ?? 'DESC')
-    .skip(pageOptionsDto.skip)
-    .take(pageOptionsDto.take);
-
-  const [data, itemCount] = await queryBuilder.getManyAndCount();
-  const meta = new PageMetaDto({ itemCount, pageOptionsDto });
-  return { data, meta };
+    const [data, itemCount] = await queryBuilder.getManyAndCount();
+    const meta = new PageMetaDto({ itemCount, pageOptionsDto });
+    return { data, meta };
   }
 }

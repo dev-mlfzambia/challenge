@@ -23,7 +23,7 @@ export interface AuthenticatedRequest extends Request {
 export class AuditContextInterceptor implements NestInterceptor {
   constructor(
     private auditContextService: AuditContextService,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
@@ -40,7 +40,10 @@ export class AuditContextInterceptor implements NestInterceptor {
 
       const isDev = this.configService.get<string>('env') === 'development';
       if (isDev) {
-        console.log('AuditContextInterceptor - Updated context with user:', user.id);
+        console.log(
+          'AuditContextInterceptor - Updated context with user:',
+          user.id,
+        );
       }
     } else if (user && !this.auditContextService.hasContext()) {
       // If no context exists but we have a user, create new context
@@ -54,15 +57,18 @@ export class AuditContextInterceptor implements NestInterceptor {
       };
 
       // Run the request in the audit context
-      return new Observable(observer => {
+      return new Observable((observer) => {
         this.auditContextService.run(auditContext, () => {
-          next.handle().pipe(
-            tap({
-              next: (value) => observer.next(value),
-              error: (error) => observer.error(error),
-              complete: () => observer.complete(),
-            })
-          ).subscribe();
+          next
+            .handle()
+            .pipe(
+              tap({
+                next: (value) => observer.next(value),
+                error: (error) => observer.error(error),
+                complete: () => observer.complete(),
+              }),
+            )
+            .subscribe();
         });
       });
     }

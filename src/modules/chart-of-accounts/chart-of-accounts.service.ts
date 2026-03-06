@@ -12,7 +12,7 @@ export class ChartOfAccountsService {
   constructor(
     @InjectRepository(ChartOfAccountsEntity)
     private chartOfAccountsRepository: Repository<ChartOfAccountsEntity>,
-  ) { }
+  ) {}
 
   async createChartOfAccounts(
     createChartOfAccountsDto: CreateChartOfAccountsDto,
@@ -51,7 +51,7 @@ export class ChartOfAccountsService {
     await this.chartOfAccountsRepository.delete(id);
   }
 
-    async softDelete(id: string): Promise<void> {
+  async softDelete(id: string): Promise<void> {
     await this.chartOfAccountsRepository.softDelete(id);
   }
 
@@ -59,7 +59,9 @@ export class ChartOfAccountsService {
     await this.chartOfAccountsRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: ChartOfAccountsEntity[]; meta: PageMetaDto }> {
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: ChartOfAccountsEntity[]; meta: PageMetaDto }> {
     const [result, total] = await this.chartOfAccountsRepository.findAndCount({
       withDeleted: true,
       where: { deletedAt: Not(null) },

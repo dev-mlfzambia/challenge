@@ -11,8 +11,9 @@ export class AdminResetPasswordDto {
   @MinLength(8)
   @MaxLength(32)
   // Add your password policy regex if needed
-  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/,
-    { message: 'Password too weak' })
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$/, {
+    message: 'Password too weak',
+  })
   newPassword: string;
 
   @ApiProperty({ example: 'NewPassword123!' })

@@ -1,9 +1,13 @@
-
-import { IsArray, IsString, IsNotEmpty, ArrayNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsNotEmpty,
+  ArrayNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class BulkClientCenterTransferDto {
-
   @ApiProperty({
     example: ['client-id-1', 'client-id-2'],
     description: 'Array of client IDs to transfer',

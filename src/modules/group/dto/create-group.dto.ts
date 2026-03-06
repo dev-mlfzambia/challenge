@@ -15,7 +15,9 @@ export class CreateGroupDto {
   @IsUUID('all', { each: true })
   clients: string[];
 
-  @ApiProperty({ description: 'UUID of the group leader (must be a client in the group)' })
+  @ApiProperty({
+    description: 'UUID of the group leader (must be a client in the group)',
+  })
   @IsUUID()
   groupLeaderId: string;
 

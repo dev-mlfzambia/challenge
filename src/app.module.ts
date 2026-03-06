@@ -37,6 +37,8 @@ import { DisbursementsModule } from './modules/disbursements/disbursements.modul
 import { SearchModule } from './modules/search/search.module';
 import { AuditMiddleware } from './middlewares/audit.middleware';
 import { ReportsModule } from './modules/reports/reports.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -74,7 +76,9 @@ import { ReportsModule } from './modules/reports/reports.module';
     AuditModule,
     ReportsModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

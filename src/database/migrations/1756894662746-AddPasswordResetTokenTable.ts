@@ -1,10 +1,12 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddPasswordResetTokenTable1756894464624 implements MigrationInterface {
-    name = 'AddPasswordResetTokenTable1756894464624'
+export class AddPasswordResetTokenTable1756894464624
+  implements MigrationInterface
+{
+  name = 'AddPasswordResetTokenTable1756894464624';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
             CREATE TABLE "password_reset_tokens" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "token" character varying NOT NULL,
@@ -16,9 +18,9 @@ export class AddPasswordResetTokenTable1756894464624 implements MigrationInterfa
                 CONSTRAINT "FK_52ac39dd8a28730c63aeb428c9c" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TABLE "password_reset_tokens"`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TABLE "password_reset_tokens"`);
+  }
 }

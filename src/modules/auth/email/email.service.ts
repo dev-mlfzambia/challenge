@@ -1,7 +1,12 @@
 import * as nodemailer from 'nodemailer';
 import * as config from 'config';
 
-export async function sendWelcomeEmail(to: string, username: string, password: string, user?: any) {
+export async function sendWelcomeEmail(
+  to: string,
+  username: string,
+  password: string,
+  user?: any,
+) {
   const mailConfig = config.get('mail');
   const transporter = nodemailer.createTransport({
     host: mailConfig.host,
@@ -14,7 +19,10 @@ export async function sendWelcomeEmail(to: string, username: string, password: s
     },
   });
 
-  const fullName = user?.lastName && user?.firstName ? `${user.lastName} ${user.firstName}` : '';
+  const fullName =
+    user?.lastName && user?.firstName
+      ? `${user.lastName} ${user.firstName}`
+      : '';
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -54,7 +62,11 @@ export async function sendWelcomeEmail(to: string, username: string, password: s
   });
 }
 
-export async function sendPasswordResetEmail(to: string, token: string, user?: any) {
+export async function sendPasswordResetEmail(
+  to: string,
+  token: string,
+  user?: any,
+) {
   const mailConfig = config.get('mail');
   // console.log('mailConfig',mailConfig)
   const transporter = nodemailer.createTransport({
@@ -70,8 +82,11 @@ export async function sendPasswordResetEmail(to: string, token: string, user?: a
 
   // console.log('transporter',transporter)
 
-  const frontendUrl = config.has('frontendUrl') ? config.get('frontendUrl') : 'http://localhost:3000';
-  const fullName = user.lastName && user.firstName ? `${user.lastName} ${user.firstName}` : '';
+  const frontendUrl = config.has('frontendUrl')
+    ? config.get('frontendUrl')
+    : 'http://localhost:3000';
+  const fullName =
+    user.lastName && user.firstName ? `${user.lastName} ${user.firstName}` : '';
   const html = `
     <!DOCTYPE html>
     <html lang="en">

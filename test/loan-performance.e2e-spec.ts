@@ -7,7 +7,7 @@ import { PerformanceMonitorService } from '../src/common/performance-monitor.ser
 
 /**
  * Loan Creation Performance Test Suite
- * 
+ *
  * This test suite validates that the loan creation optimizations
  * meet the target performance requirements:
  * - ≤5 seconds response time for 4+ clients
@@ -36,7 +36,9 @@ describe('Loan Creation Performance Tests', () => {
     await app.init();
 
     loanService = moduleFixture.get<LoanService>(LoanService);
-    performanceMonitor = moduleFixture.get<PerformanceMonitorService>(PerformanceMonitorService);
+    performanceMonitor = moduleFixture.get<PerformanceMonitorService>(
+      PerformanceMonitorService,
+    );
 
     // Setup authentication token for testing
     authToken = await getTestAuthToken();
@@ -53,9 +55,9 @@ describe('Loan Creation Performance Tests', () => {
   describe('Performance Requirements Validation', () => {
     it('should create loans for 4 clients in ≤5 seconds', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       const startTime = Date.now();
-      
+
       const response = await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
@@ -67,18 +69,20 @@ describe('Loan Creation Performance Tests', () => {
 
       // Validate response time target
       expect(duration).toBeLessThanOrEqual(5000);
-      
+
       // Validate API response includes performance metrics
       expect(response.body.performance).toBeDefined();
       expect(response.body.performance.duration).toBeLessThanOrEqual(5000);
       expect(response.body.performance.targetsMet.duration).toBe(true);
-      
-      console.log(`✅ Loan creation completed in ${duration}ms (target: ≤5000ms)`);
+
+      console.log(
+        `✅ Loan creation completed in ${duration}ms (target: ≤5000ms)`,
+      );
     });
 
     it('should use ≤40 database queries for loan package creation', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       const response = await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
@@ -88,13 +92,15 @@ describe('Loan Creation Performance Tests', () => {
       // Validate query count target
       expect(response.body.performance.queryCount).toBeLessThanOrEqual(40);
       expect(response.body.performance.targetsMet.queryCount).toBe(true);
-      
-      console.log(`✅ Loan creation used ${response.body.performance.queryCount} queries (target: ≤40)`);
+
+      console.log(
+        `✅ Loan creation used ${response.body.performance.queryCount} queries (target: ≤40)`,
+      );
     });
 
     it('should demonstrate significant performance improvement over baseline', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       // Run optimized version
       const optimizedResponse = await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
@@ -103,19 +109,23 @@ describe('Loan Creation Performance Tests', () => {
         .expect(201);
 
       const optimizedMetrics = optimizedResponse.body.performance;
-      
+
       // Expected baseline performance (from requirements):
       // - Duration: >10 seconds
       // - Queries: ~80 per loan package
       const baselineDuration = 10000;
       const baselineQueries = 80;
-      
-      const durationImprovement = ((baselineDuration - optimizedMetrics.duration) / baselineDuration) * 100;
-      const queryImprovement = ((baselineQueries - optimizedMetrics.queryCount) / baselineQueries) * 100;
-      
+
+      const durationImprovement =
+        ((baselineDuration - optimizedMetrics.duration) / baselineDuration) *
+        100;
+      const queryImprovement =
+        ((baselineQueries - optimizedMetrics.queryCount) / baselineQueries) *
+        100;
+
       // Validate minimum 50% improvement in queries (as per requirements)
       expect(queryImprovement).toBeGreaterThanOrEqual(50);
-      
+
       console.log(`✅ Performance improvements:`);
       console.log(`   Duration: ${durationImprovement.toFixed(1)}% faster`);
       console.log(`   Queries: ${queryImprovement.toFixed(1)}% reduction`);
@@ -123,108 +133,117 @@ describe('Loan Creation Performance Tests', () => {
 
     it('should handle concurrent loan creation without performance degradation', async () => {
       const concurrentRequests = 3;
-      const testLoanDataSets = Array.from({ length: concurrentRequests }, (_, i) => 
-        createTestLoanData(4, `concurrent-test-${i}`)
+      const testLoanDataSets = Array.from(
+        { length: concurrentRequests },
+        (_, i) => createTestLoanData(4, `concurrent-test-${i}`),
       );
-      
+
       const startTime = Date.now();
-      
+
       // Execute concurrent loan creations
-      const promises = testLoanDataSets.map(testData =>
+      const promises = testLoanDataSets.map((testData) =>
         request(app.getHttpServer())
           .post('/performance/loans/create-optimized')
           .set('Authorization', `Bearer ${authToken}`)
-          .send(testData)
+          .send(testData),
       );
-      
+
       const responses = await Promise.all(promises);
       const endTime = Date.now();
-      
+
       // All requests should succeed
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(201);
         expect(response.body.performance.duration).toBeLessThanOrEqual(5000);
         expect(response.body.performance.queryCount).toBeLessThanOrEqual(40);
       });
-      
+
       const totalDuration = endTime - startTime;
-      const averageDuration = responses.reduce((sum, r) => sum + r.body.performance.duration, 0) / responses.length;
-      
+      const averageDuration =
+        responses.reduce((sum, r) => sum + r.body.performance.duration, 0) /
+        responses.length;
+
       console.log(`✅ Concurrent processing (${concurrentRequests} requests):`);
       console.log(`   Total time: ${totalDuration}ms`);
-      console.log(`   Average individual duration: ${averageDuration.toFixed(0)}ms`);
+      console.log(
+        `   Average individual duration: ${averageDuration.toFixed(0)}ms`,
+      );
     });
 
     it('should maintain memory usage within acceptable limits', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       const memoryBefore = process.memoryUsage();
-      
+
       const response = await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
         .send(testLoanData)
         .expect(201);
-      
+
       const memoryAfter = process.memoryUsage();
       const memoryIncrease = memoryAfter.heapUsed - memoryBefore.heapUsed;
-      
+
       // Memory increase should be reasonable (less than 50MB for 4 clients)
       const maxMemoryIncreaseMB = 50;
       const memoryIncreaseMB = memoryIncrease / 1024 / 1024;
-      
+
       expect(memoryIncreaseMB).toBeLessThan(maxMemoryIncreaseMB);
-      
-      console.log(`✅ Memory usage increase: ${memoryIncreaseMB.toFixed(2)}MB (limit: ${maxMemoryIncreaseMB}MB)`);
+
+      console.log(
+        `✅ Memory usage increase: ${memoryIncreaseMB.toFixed(
+          2,
+        )}MB (limit: ${maxMemoryIncreaseMB}MB)`,
+      );
     });
   });
 
   describe('Performance Monitoring and Metrics', () => {
     it('should provide comprehensive performance metrics', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
         .send(testLoanData)
         .expect(201);
-      
+
       const metricsResponse = await request(app.getHttpServer())
         .get('/performance/loans/performance-summary')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
-      
+
       const metrics = metricsResponse.body;
-      
+
       expect(metrics.summary).toBeDefined();
       expect(metrics.summary.totalOperations).toBeGreaterThan(0);
       expect(metrics.summary.averageDuration).toBeDefined();
       expect(metrics.summary.averageQueryCount).toBeDefined();
       expect(metrics.targetCompliance).toBeDefined();
-      
+
       console.log('✅ Performance metrics tracking working correctly');
     });
 
     it('should validate performance targets', async () => {
       const testLoanData = createTestLoanData(4);
-      
+
       await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
         .send(testLoanData)
         .expect(201);
-      
+
       const validationResponse = await request(app.getHttpServer())
         .post('/performance/loans/validate-performance')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
-      
+
       const validation = validationResponse.body;
-      
+
       expect(validation.success).toBe(true);
       expect(validation.validation.passedDuration).toBe(true);
       expect(validation.validation.passedQueryCount).toBe(true);
-      
+
       console.log('✅ Performance target validation working correctly');
     });
   });
@@ -232,28 +251,28 @@ describe('Loan Creation Performance Tests', () => {
   describe('Error Handling and Rollback', () => {
     it('should rollback transaction on error without performance impact', async () => {
       const invalidLoanData = createInvalidTestLoanData();
-      
+
       const startTime = Date.now();
-      
+
       const response = await request(app.getHttpServer())
         .post('/performance/loans/create-optimized')
         .set('Authorization', `Bearer ${authToken}`)
         .send(invalidLoanData)
         .expect(400);
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       // Even failed operations should complete quickly
       expect(duration).toBeLessThan(2000);
       expect(response.body.message).toBeDefined();
-      
+
       console.log(`✅ Error handling completed in ${duration}ms`);
     });
   });
 
   // Helper functions
-  function createTestLoanData(clientCount: number, suffix: string = '') {
+  function createTestLoanData(clientCount: number, suffix = '') {
     return {
       groupId: `test-group-id-${suffix}`,
       targetDisbursementDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
@@ -283,16 +302,16 @@ describe('Loan Creation Performance Tests', () => {
 
 /**
  * Performance Benchmarking Utility
- * 
+ *
  * Use this to run benchmarks and generate performance reports
  */
 export class LoanPerformanceBenchmark {
   constructor(
     private app: INestApplication,
-    private performanceMonitor: PerformanceMonitorService
+    private performanceMonitor: PerformanceMonitorService,
   ) {}
 
-  async runBenchmark(iterations: number = 10, clientCount: number = 4): Promise<void> {
+  async runBenchmark(iterations = 10, clientCount = 4): Promise<void> {
     console.log(`\n🚀 Running Loan Creation Performance Benchmark`);
     console.log(`   Iterations: ${iterations}`);
     console.log(`   Clients per loan: ${clientCount}`);
@@ -302,7 +321,7 @@ export class LoanPerformanceBenchmark {
 
     for (let i = 0; i < iterations; i++) {
       const testData = this.createBenchmarkData(clientCount, i);
-      
+
       try {
         const response = await request(this.app.getHttpServer())
           .post('/performance/loans/create-optimized')
@@ -336,17 +355,17 @@ export class LoanPerformanceBenchmark {
   }
 
   private generateBenchmarkReport(results: any[]): void {
-    const successful = results.filter(r => r.success);
-    const failed = results.filter(r => !r.success);
+    const successful = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
 
     if (successful.length === 0) {
       console.log('❌ All operations failed');
       return;
     }
 
-    const durations = successful.map(r => r.duration);
-    const queryCounts = successful.map(r => r.queryCount);
-    const memoryUsages = successful.map(r => r.memoryUsed);
+    const durations = successful.map((r) => r.duration);
+    const queryCounts = successful.map((r) => r.queryCount);
+    const memoryUsages = successful.map((r) => r.memoryUsed);
 
     const stats = {
       successRate: (successful.length / results.length) * 100,
@@ -365,32 +384,44 @@ export class LoanPerformanceBenchmark {
     console.log(`     Average: ${stats.avgDuration.toFixed(0)}ms`);
     console.log(`     Min: ${stats.minDuration}ms`);
     console.log(`     Max: ${stats.maxDuration}ms`);
-    console.log(`     Target Met: ${stats.avgDuration <= 5000 ? '✅' : '❌'} (≤5000ms)`);
-    
+    console.log(
+      `     Target Met: ${stats.avgDuration <= 5000 ? '✅' : '❌'} (≤5000ms)`,
+    );
+
     console.log(`   
    Query Count:`);
     console.log(`     Average: ${stats.avgQueries.toFixed(1)}`);
     console.log(`     Min: ${stats.minQueries}`);
     console.log(`     Max: ${stats.maxQueries}`);
-    console.log(`     Target Met: ${stats.avgQueries <= 40 ? '✅' : '❌'} (≤40 queries)`);
-    
+    console.log(
+      `     Target Met: ${stats.avgQueries <= 40 ? '✅' : '❌'} (≤40 queries)`,
+    );
+
     console.log(`   
    Memory Usage:`);
-    console.log(`     Average: ${(stats.avgMemory / 1024 / 1024).toFixed(2)}MB`);
+    console.log(
+      `     Average: ${(stats.avgMemory / 1024 / 1024).toFixed(2)}MB`,
+    );
 
     if (failed.length > 0) {
       console.log(`   
    Failed Operations: ${failed.length}`);
-      failed.forEach(f => {
+      failed.forEach((f) => {
         console.log(`     Iteration ${f.iteration}: ${f.error}`);
       });
     }
 
     // Performance grade
-    const durationGrade = stats.avgDuration <= 5000 ? 'A' : stats.avgDuration <= 7000 ? 'B' : 'C';
-    const queryGrade = stats.avgQueries <= 40 ? 'A' : stats.avgQueries <= 60 ? 'B' : 'C';
-    const overallGrade = durationGrade === 'A' && queryGrade === 'A' ? 'A' : 
-                        durationGrade !== 'C' && queryGrade !== 'C' ? 'B' : 'C';
+    const durationGrade =
+      stats.avgDuration <= 5000 ? 'A' : stats.avgDuration <= 7000 ? 'B' : 'C';
+    const queryGrade =
+      stats.avgQueries <= 40 ? 'A' : stats.avgQueries <= 60 ? 'B' : 'C';
+    const overallGrade =
+      durationGrade === 'A' && queryGrade === 'A'
+        ? 'A'
+        : durationGrade !== 'C' && queryGrade !== 'C'
+        ? 'B'
+        : 'C';
 
     console.log(`   
    Performance Grade: ${overallGrade}`);
