@@ -11,7 +11,7 @@ export class AccrualsService {
   constructor(
     @InjectRepository(AccrualEntity)
     private readonly accrualRepository: Repository<AccrualEntity>,
-  ) { }
+  ) {}
 
   async create(createDto: CreateAccrualDto): Promise<AccrualEntity> {
     const entity = this.accrualRepository.create(createDto);
@@ -86,19 +86,21 @@ export class AccrualsService {
     await this.accrualRepository.restore(id);
   }
 
+  async findDeleted(
+    pageOptionsDto: any,
+  ): Promise<{ data: AccrualEntity[]; meta: any }> {
+    const queryBuilder = this.accrualRepository
+      .createQueryBuilder('accrual')
+      .withDeleted()
+      .where('accrual.deletedAt IS NOT NULL')
+      .orderBy('accrual.createdAt', pageOptionsDto.order ?? 'DESC')
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-async findDeleted(pageOptionsDto: any): Promise<{ data: AccrualEntity[]; meta: any }> {
-  const queryBuilder = this.accrualRepository.createQueryBuilder('accrual')
-    .withDeleted()
-    .where('accrual.deletedAt IS NOT NULL')
-    .orderBy('accrual.createdAt', pageOptionsDto.order ?? 'DESC')
-    .skip(pageOptionsDto.skip)
-    .take(pageOptionsDto.take);
-
-  const [data, itemCount] = await queryBuilder.getManyAndCount();
-  // You should use PageMetaDto here if available
-  const meta = { itemCount, pageOptionsDto };
-  return { data, meta };
+    const [data, itemCount] = await queryBuilder.getManyAndCount();
+    // You should use PageMetaDto here if available
+    const meta = { itemCount, pageOptionsDto };
+    return { data, meta };
   }
   async findByLoanId(loanId: string): Promise<AccrualEntity[]> {
     return this.accrualRepository.find({

@@ -27,7 +27,7 @@ import { LoanOfficerMetricsResponseDto } from './dtos/loan-officer-metrics.dto';
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/users')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER, RoleType.CREDIT])
   @Get()
@@ -50,18 +50,21 @@ export class UserController {
     return userDto;
   }
 
-
   @Auth([RoleType.SUPER_USER])
   @Get('deleted')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all soft deleted users' })
   @ApiResponse({ status: 200, description: 'List of soft deleted users.' })
-  async getDeletedUsers(@Query() pageOptionsDto: PageOptionsDto): Promise<UsersResponseDto> {
-  const { data, meta } = await this.userService.getDeletedUsers(pageOptionsDto);
-  const userDtos = data.map((user) => new UserDto(user));
-  const usersResponse = UsersResponseDto.from(userDtos, meta);
-  usersResponse.message = 'Soft deleted users retrieved successfully';
-  return usersResponse; 
+  async getDeletedUsers(
+    @Query() pageOptionsDto: PageOptionsDto,
+  ): Promise<UsersResponseDto> {
+    const { data, meta } = await this.userService.getDeletedUsers(
+      pageOptionsDto,
+    );
+    const userDtos = data.map((user) => new UserDto(user));
+    const usersResponse = UsersResponseDto.from(userDtos, meta);
+    usersResponse.message = 'Soft deleted users retrieved successfully';
+    return usersResponse;
   }
 
   @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER, RoleType.CREDIT])
@@ -142,7 +145,10 @@ export class UserController {
   @Get('loan-officer/metrics')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get metrics for loan officer' })
-  @ApiResponse({ status: 200, description: 'Loan officer metrics retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Loan officer metrics retrieved successfully.',
+  })
   @ApiResponse({ status: 403, description: 'User is not a loan officer.' })
   async getMyMetrics(@Request() req): Promise<LoanOfficerMetricsResponseDto> {
     const metrics = await this.userService.getLoanOfficerMetrics(req.user.id);

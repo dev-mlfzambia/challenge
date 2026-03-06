@@ -18,7 +18,7 @@ import { GroupPackageEntity } from '../group-package/entities/group-package.enti
       ClientEntity,
       LoanEntity,
       GroupPackageEntity,
-    ])
+    ]),
   ],
   controllers: [UserController],
   exports: [UserService],

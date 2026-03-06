@@ -40,21 +40,21 @@ export class GroupDto extends AbstractDto {
 
   @ApiProperty({ type: () => Object })
   staff: {
-    id: string,
+    id: string;
     firstName: string;
-    lastName: string,
+    lastName: string;
     office: {
-      id: string,
-      name: string,
-    }
+      id: string;
+      name: string;
+    };
   };
 
   @ApiProperty()
   @Expose()
   meetingDates: {
-    week: number,
-    day: string,
-  }
+    week: number;
+    day: string;
+  };
 
   @ApiProperty()
   @Expose()
@@ -64,7 +64,7 @@ export class GroupDto extends AbstractDto {
     super(group);
     this.name = group.name;
     this.officeName = group.officeName;
-    this.systemName = group.systemName
+    this.systemName = group.systemName;
     this.active = group.active;
     this.status = group.status
       ? { id: group.status.id, name: group.status.name }
@@ -74,15 +74,14 @@ export class GroupDto extends AbstractDto {
       : undefined;
     this.staff = group.staff
       ? {
-        id: group.staff.id,
-        firstName: group.staff.firstName,
-        lastName: group.staff.lastName,
-        office:
-        {
-          id: group?.staff?.office?.id,
-          name: group?.staff?.office?.name,
+          id: group.staff.id,
+          firstName: group.staff.firstName,
+          lastName: group.staff.lastName,
+          office: {
+            id: group?.staff?.office?.id,
+            name: group?.staff?.office?.name,
+          },
         }
-      }
       : undefined;
     this.meetingDates = {
       week: group.center.meetingDates?.week || null,

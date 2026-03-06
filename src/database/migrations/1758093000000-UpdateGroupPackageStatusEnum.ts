@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddRejectedStatusToGroupPackagesEnum1758093000000 implements MigrationInterface {
+export class AddRejectedStatusToGroupPackagesEnum1758093000000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if 'Rejected' exists in the enum already
     const enumValuesResult = await queryRunner.query(`
@@ -22,6 +24,8 @@ export class AddRejectedStatusToGroupPackagesEnum1758093000000 implements Migrat
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Nothing to do — Postgres can’t drop enum values
-    console.log('Down migration not supported: PostgreSQL does not allow removing enum values.');
+    console.log(
+      'Down migration not supported: PostgreSQL does not allow removing enum values.',
+    );
   }
 }

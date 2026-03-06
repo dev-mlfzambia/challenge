@@ -6,7 +6,7 @@ export class CreateAuditTable1758093000002 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if audits table already exists
     const tableExists = await queryRunner.hasTable('audits');
-    
+
     if (!tableExists) {
       await queryRunner.query(`
         CREATE TABLE "audits" (
@@ -27,10 +27,24 @@ export class CreateAuditTable1758093000002 implements MigrationInterface {
 
     // Create indexes for better query performance only if they don't exist
     const indexes = [
-      { name: 'IDX_audits_auditable_type_id', query: 'CREATE INDEX "IDX_audits_auditable_type_id" ON "audits" ("auditable_type", "auditable_id")' },
-      { name: 'IDX_audits_user_id', query: 'CREATE INDEX "IDX_audits_user_id" ON "audits" ("user_id")' },
-      { name: 'IDX_audits_event', query: 'CREATE INDEX "IDX_audits_event" ON "audits" ("event")' },
-      { name: 'IDX_audits_created_at', query: 'CREATE INDEX "IDX_audits_created_at" ON "audits" ("created_at")' }
+      {
+        name: 'IDX_audits_auditable_type_id',
+        query:
+          'CREATE INDEX "IDX_audits_auditable_type_id" ON "audits" ("auditable_type", "auditable_id")',
+      },
+      {
+        name: 'IDX_audits_user_id',
+        query: 'CREATE INDEX "IDX_audits_user_id" ON "audits" ("user_id")',
+      },
+      {
+        name: 'IDX_audits_event',
+        query: 'CREATE INDEX "IDX_audits_event" ON "audits" ("event")',
+      },
+      {
+        name: 'IDX_audits_created_at',
+        query:
+          'CREATE INDEX "IDX_audits_created_at" ON "audits" ("created_at")',
+      },
     ];
 
     for (const index of indexes) {
@@ -50,14 +64,14 @@ export class CreateAuditTable1758093000002 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Check if audits table exists before trying to drop it
     const tableExists = await queryRunner.hasTable('audits');
-    
+
     if (tableExists) {
       // Drop indexes first if they exist
       const indexes = [
         'IDX_audits_auditable_type_id',
-        'IDX_audits_user_id', 
+        'IDX_audits_user_id',
         'IDX_audits_event',
-        'IDX_audits_created_at'
+        'IDX_audits_created_at',
       ];
 
       for (const indexName of indexes) {

@@ -29,7 +29,9 @@ export class AuditMiddleware implements NestMiddleware {
 
     // Debug logging to track context creation
     if (process.env.NODE_ENV === 'development') {
-      console.log('Audit Middleware - Creating initial context (user will be added later)');
+      console.log(
+        'Audit Middleware - Creating initial context (user will be added later)',
+      );
       console.log('Audit Middleware - Initial context:', auditContext);
     }
 
@@ -39,7 +41,9 @@ export class AuditMiddleware implements NestMiddleware {
     });
   }
 
-  private getUserDisplayName(user?: AuthenticatedRequest['user']): string | undefined {
+  private getUserDisplayName(
+    user?: AuthenticatedRequest['user'],
+  ): string | undefined {
     if (!user) return undefined;
 
     if (user.username) return user.username;

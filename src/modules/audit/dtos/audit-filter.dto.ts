@@ -1,7 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { AuditStatus } from '../../../constants/audit-status';
 import { Type } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsNumber, IsDateString } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsDateString,
+} from 'class-validator';
 import { Order } from 'src/constants';
 
 export class AuditFilterDto {
@@ -45,7 +51,11 @@ export class AuditFilterDto {
   @IsString()
   ipAddress?: string;
 
-  @ApiPropertyOptional({ enum: ['ASC', 'DESC'], default: 'DESC', description: 'Sort order' })
+  @ApiPropertyOptional({
+    enum: ['ASC', 'DESC'],
+    default: 'DESC',
+    description: 'Sort order',
+  })
   @IsOptional()
   @IsString()
   order?: Order.DESC;
@@ -56,7 +66,11 @@ export class AuditFilterDto {
   @IsNumber()
   page?: number;
 
-  @ApiPropertyOptional({ type: Number, default: 20, description: 'Items per page' })
+  @ApiPropertyOptional({
+    type: Number,
+    default: 20,
+    description: 'Items per page',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

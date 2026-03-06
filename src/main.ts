@@ -1,3 +1,4 @@
+import './load-env';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import * as morgan from 'morgan';

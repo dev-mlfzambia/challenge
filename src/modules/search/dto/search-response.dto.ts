@@ -37,7 +37,11 @@ export class SearchResponseDto {
     type: () => SearchResultDto,
     description: 'Clients search results',
   })
-  client: SearchResultDto<{ id: string; firstName: string; nationalIdNumber: string }>;
+  client: SearchResultDto<{
+    id: string;
+    firstName: string;
+    nationalIdNumber: string;
+  }>;
 
   @ApiProperty({ description: 'Total count across all entity types' })
   totalCount: number;
@@ -52,7 +56,11 @@ export class SearchResponseDto {
     centers: SearchResultDto<{ id: string; name: string }>,
     groups: SearchResultDto<{ id: string; name: string }>,
     staff: SearchResultDto<{ id: string; name: string }>,
-  client: SearchResultDto<{ id: string; firstName: string; nationalIdNumber: string }>,
+    client: SearchResultDto<{
+      id: string;
+      firstName: string;
+      nationalIdNumber: string;
+    }>,
     searchQuery: string,
     // searchTime: number,
   ) {

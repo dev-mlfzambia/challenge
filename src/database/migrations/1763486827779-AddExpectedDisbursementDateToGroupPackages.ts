@@ -1,8 +1,9 @@
-import { MigrationInterface, QueryRunner, TableColumn } from "typeorm";
+import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 
-export class AddExpectedDisbursementDateToGroupPackages1763486827779 implements MigrationInterface {
-
-    public async up(queryRunner: QueryRunner): Promise<void> {
+export class AddExpectedDisbursementDateToGroupPackages1763486827779
+  implements MigrationInterface
+{
+  public async up(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable('group_packages');
     const columnExists = table?.findColumnByName('expected_disbursement_date');
 
@@ -23,8 +24,10 @@ export class AddExpectedDisbursementDateToGroupPackages1763486827779 implements 
     const columnExists = table?.findColumnByName('expected_disbursement_date');
 
     if (columnExists) {
-      await queryRunner.dropColumn('group_packages', 'expected_disbursement_date');
+      await queryRunner.dropColumn(
+        'group_packages',
+        'expected_disbursement_date',
+      );
     }
   }
-
 }

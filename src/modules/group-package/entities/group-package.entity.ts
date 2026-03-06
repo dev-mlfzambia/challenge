@@ -46,9 +46,9 @@ export class GroupPackageEntity extends AbstractEntity<GroupPackageEntity> {
   })
   status: GroupPackageStatus;
 
-   @Column({ type: 'date', nullable: false })
+  @Column({ type: 'date', nullable: false })
   expectedDisbursementDate: Date;
-  
+
   @CreateDateColumn()
   createdAt: Date;
 

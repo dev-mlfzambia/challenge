@@ -55,12 +55,17 @@ export class CreateClientDto {
   @IsOptional()
   emailAddress?: string;
 
-  @ApiPropertyOptional({ description: 'Proof of address file link (will be populated from file upload)' })
+  @ApiPropertyOptional({
+    description:
+      'Proof of address file link (will be populated from file upload)',
+  })
   @IsString()
   @IsOptional()
   proofOfAddress?: string;
 
-  @ApiPropertyOptional({ description: 'National ID file link (will be populated from file upload)' })
+  @ApiPropertyOptional({
+    description: 'National ID file link (will be populated from file upload)',
+  })
   @IsString()
   @IsOptional()
   nationalId?: string;

@@ -1,16 +1,19 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { BaseResponseDto } from "src/common/dtos";
-import { PaymentMethod, TransactionEntity, TransactionType } from "src/modules/transaction/entities/transaction.entity";
-
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponseDto } from 'src/common/dtos';
+import {
+  PaymentMethod,
+  TransactionEntity,
+  TransactionType,
+} from 'src/modules/transaction/entities/transaction.entity';
 
 export class PackageTransactionDto {
   @ApiProperty({ example: 'uuid' })
   id: string;
 
-  @ApiProperty({ enum: TransactionType})
+  @ApiProperty({ enum: TransactionType })
   transactionType: TransactionType;
 
-  @ApiProperty({ example: 1000.00 })
+  @ApiProperty({ example: 1000.0 })
   amount: number;
 
   @ApiProperty({ example: '2025-11-07T10:00:00Z' })
@@ -34,8 +37,10 @@ export class PackageTransactionDto {
   constructor(transaction: TransactionEntity) {
     this.id = transaction.id;
     this.transactionType = transaction.transactionType;
-    this.amount = transaction.transactionType === TransactionType.DISBURSEMENT 
-      ? transaction.credit : transaction.debit;
+    this.amount =
+      transaction.transactionType === TransactionType.DISBURSEMENT
+        ? transaction.credit
+        : transaction.debit;
     this.transactionDate = transaction.transactionDate;
     this.paymentMethod = transaction.paymentMethod;
     this.receiptNumber = transaction.receiptNumber;
@@ -45,11 +50,17 @@ export class PackageTransactionDto {
   }
 }
 
-export class PackageTransactionsResponseDto extends BaseResponseDto<PackageTransactionDto[]> {
+export class PackageTransactionsResponseDto extends BaseResponseDto<
+  PackageTransactionDto[]
+> {
   static fromTransactions(
     data: PackageTransactionDto[] | null,
     message = 'Transactions retrieved successfully',
   ): PackageTransactionsResponseDto {
-    return BaseResponseDto.from(data, !!data, message) as PackageTransactionsResponseDto;
+    return BaseResponseDto.from(
+      data,
+      !!data,
+      message,
+    ) as PackageTransactionsResponseDto;
   }
 }

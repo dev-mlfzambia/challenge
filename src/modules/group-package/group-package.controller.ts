@@ -48,11 +48,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class GroupPackageController {
   constructor(private readonly groupPackageService: GroupPackageService) {}
 
-
   @Post('migrate-agreement-forms')
-  @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER ,RoleType.IT])
-  @ApiOperation({ summary: 'Migrate base64 agreementForm files to DigitalOcean Spaces for all GroupPackages and Loans' })
-  @ApiResponse({ status: 200, description: 'Migration completed. Returns summary of migrated and failed items.' })
+  @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER, RoleType.IT])
+  @ApiOperation({
+    summary:
+      'Migrate base64 agreementForm files to DigitalOcean Spaces for all GroupPackages and Loans',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Migration completed. Returns summary of migrated and failed items.',
+  })
   async migrateAgreementForms(@Request() req) {
     return await this.groupPackageService.migrateAgreementFormsToSpaces();
   }
@@ -169,36 +175,37 @@ export class GroupPackageController {
     RoleType.SUPER_USER,
     RoleType.REGIONAL_MANAGER,
   ])
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get group package balance',
-    description: 'Retrieve the current outstanding balance breakdown for a specific group package'
+    description:
+      'Retrieve the current outstanding balance breakdown for a specific group package',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Group package balance retrieved successfully',
-    type: GroupPackageBalanceResponseDto 
+    type: GroupPackageBalanceResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Group package not found' 
+  @ApiResponse({
+    status: 404,
+    description: 'Group package not found',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Access denied - insufficient permissions' 
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied - insufficient permissions',
   })
-  async getPackageBalance(
-    @Param('id') id: string, 
-    @Request() req
-  ) {
-    const result = await this.groupPackageService.getPackageBalance(id, req.user);
+  async getPackageBalance(@Param('id') id: string, @Request() req) {
+    const result = await this.groupPackageService.getPackageBalance(
+      id,
+      req.user,
+    );
     const balanceDto = new GroupPackageBalanceResponseDto(result);
-    
+
     const response = BaseResponseDto.from(
       balanceDto,
       true,
       'Group package balance retrieved successfully',
     );
-    
+
     return response;
   }
   // @Get(':packageId/loans/:loanId/agreement')
@@ -342,59 +349,65 @@ export class GroupPackageController {
     const result = await this.groupPackageService.reject(id, req.user);
     return GroupPackageResponseDto.fromGroupPackage(result);
   }
-  
 
   @Get(':packageId/transactions')
-@Auth([
-  RoleType.LOAN_OFFICER,
-  RoleType.BRANCH_MANAGER,
-  RoleType.SUPER_USER,
-  RoleType.REGIONAL_MANAGER,
-])
-@ApiOperation({ summary: 'Get all transactions for a group package' })
-@ApiResponse({ 
-  status: 200, 
-  description: 'Package transactions retrieved successfully',
-  type: PackageTransactionsResponseDto 
-})
-async getPackageTransactions(
-  @Param('packageId') packageId: string,
-  @Query() pageOptions: PageOptionsDto
-) {
-  const result = await this.groupPackageService.getPackageTransactions(packageId, pageOptions);
-  return PageResponseDto.from(
-    result.data,
-    result.meta,
-    'Package transactions retrieved successfully',
-    true,
-  );
-}
+  @Auth([
+    RoleType.LOAN_OFFICER,
+    RoleType.BRANCH_MANAGER,
+    RoleType.SUPER_USER,
+    RoleType.REGIONAL_MANAGER,
+  ])
+  @ApiOperation({ summary: 'Get all transactions for a group package' })
+  @ApiResponse({
+    status: 200,
+    description: 'Package transactions retrieved successfully',
+    type: PackageTransactionsResponseDto,
+  })
+  async getPackageTransactions(
+    @Param('packageId') packageId: string,
+    @Query() pageOptions: PageOptionsDto,
+  ) {
+    const result = await this.groupPackageService.getPackageTransactions(
+      packageId,
+      pageOptions,
+    );
+    return PageResponseDto.from(
+      result.data,
+      result.meta,
+      'Package transactions retrieved successfully',
+      true,
+    );
+  }
 
- @Get('loans/:loanId/transactions')
-@Auth([
-  RoleType.LOAN_OFFICER,
-  RoleType.BRANCH_MANAGER,
-  RoleType.SUPER_USER,
-  RoleType.REGIONAL_MANAGER,
-])
-@ApiOperation({ summary: 'Get all transactions for a group package' })
-@ApiResponse({ 
-  status: 200, 
-  description: 'Package transactions retrieved successfully',
-  type: PackageTransactionsResponseDto 
-})
-async getPackageTransactionsByLoanId(
-  @Param('loanId') loanId: string,
-  @Query() pageOptions: PageOptionsDto
-) {
-  const result = await this.groupPackageService.getPackageTransactionsByLoanId(loanId, pageOptions);
-  return PageResponseDto.from(
-    result.data,
-    result.meta,
-    'Package transactions retrieved successfully',
-    true,
-  );
-}
+  @Get('loans/:loanId/transactions')
+  @Auth([
+    RoleType.LOAN_OFFICER,
+    RoleType.BRANCH_MANAGER,
+    RoleType.SUPER_USER,
+    RoleType.REGIONAL_MANAGER,
+  ])
+  @ApiOperation({ summary: 'Get all transactions for a group package' })
+  @ApiResponse({
+    status: 200,
+    description: 'Package transactions retrieved successfully',
+    type: PackageTransactionsResponseDto,
+  })
+  async getPackageTransactionsByLoanId(
+    @Param('loanId') loanId: string,
+    @Query() pageOptions: PageOptionsDto,
+  ) {
+    const result =
+      await this.groupPackageService.getPackageTransactionsByLoanId(
+        loanId,
+        pageOptions,
+      );
+    return PageResponseDto.from(
+      result.data,
+      result.meta,
+      'Package transactions retrieved successfully',
+      true,
+    );
+  }
   @Get('by-group/:groupId')
   @Auth([
     RoleType.LOAN_OFFICER,
@@ -449,12 +462,16 @@ async getPackageTransactionsByLoanId(
     csvStream.end();
   }
 
-   @Get('superuser-metrics')
+  @Get('superuser-metrics')
   @Auth([RoleType.SUPER_USER])
   @ApiOperation({ summary: 'Get Super User Dashboard Metrics' })
-  @ApiResponse({ status: 200, description: 'Returns dashboard metrics for super user.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns dashboard metrics for super user.',
+  })
   async getDashboardMetrics() {
-    const metrics = await this.groupPackageService.getSuperUserDashboardMetrics();
+    const metrics =
+      await this.groupPackageService.getSuperUserDashboardMetrics();
     return metrics;
   }
 

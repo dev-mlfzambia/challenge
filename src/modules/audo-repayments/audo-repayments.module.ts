@@ -4,6 +4,6 @@ import { AudoRepaymentsController } from './audo-repayments.controller';
 
 @Module({
   controllers: [AudoRepaymentsController],
-  providers: [AudoRepaymentsService]
+  providers: [AudoRepaymentsService],
 })
 export class AudoRepaymentsModule {}

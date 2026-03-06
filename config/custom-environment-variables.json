@@ -1,7 +1,7 @@
 {
   "server": { "port": "SERVER_PORT" },
   "db": {
-    "username": "DB_USER",
+    "username": "DB_USERNAME",
     "password": "DB_PASSWORD",
     "host": "DB_HOST",
     "port": "DB_PORT",

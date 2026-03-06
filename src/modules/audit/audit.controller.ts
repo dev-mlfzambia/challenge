@@ -10,7 +10,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuditService, AuditQueryOptions } from './audit.service';
 import { AuditContextService } from './audit-context.service';
 import { Audit } from './entities/audit.entity';
@@ -35,14 +40,21 @@ export class AuditController {
   ) {}
 
   @Get()
-  @AuditRoles(RoleType.SUPER_USER, RoleType.IT, RoleType.REGIONAL_MANAGER, RoleType.BRANCH_MANAGER)
+  @AuditRoles(
+    RoleType.SUPER_USER,
+    RoleType.IT,
+    RoleType.REGIONAL_MANAGER,
+    RoleType.BRANCH_MANAGER,
+  )
   @ApiOperation({ summary: 'Get audit trails with filtering and pagination' })
   @ApiResponse({
     status: 200,
     description: 'Audit trails retrieved successfully',
     type: PageResponseDto<Audit>,
   })
-  async findAuditTrails(@Query() filter: AuditFilterDto): Promise<PageResponseDto<Audit>> {
+  async findAuditTrails(
+    @Query() filter: AuditFilterDto,
+  ): Promise<PageResponseDto<Audit>> {
     // Convert date strings to Date objects and set defaults for pagination
     const options: AuditQueryOptions = {
       ...filter,
@@ -51,7 +63,8 @@ export class AuditController {
       order: filter.order || Order.DESC,
       skip: filter.skip,
       page: filter.page && filter.page > 0 ? filter.page : 1,
-      take: filter.take && filter.take > 0 && filter.take <= 100 ? filter.take : 20,
+      take:
+        filter.take && filter.take > 0 && filter.take <= 100 ? filter.take : 20,
     };
     return this.auditService.findAuditTrails(options);
   }
@@ -101,8 +114,6 @@ export class AuditController {
   //   return this.auditService.getAuditStatistics(start, end);
   // }
 
-  
-
   // @Get('export')
   // @ApiOperation({ summary: 'Export audit data' })
   // @ApiResponse({
@@ -113,6 +124,4 @@ export class AuditController {
   // async exportAuditData(@Query() options: AuditQueryOptions): Promise<Audit[]> {
   //   return this.auditService.exportAuditData(options);
   // }
-
-  
 }

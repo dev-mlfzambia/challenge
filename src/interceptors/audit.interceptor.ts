@@ -7,7 +7,10 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { AuditContextService } from '../modules/audit/audit-context.service';
-import { AUDIT_REASON_KEY, AUDIT_METADATA_KEY } from '../decorators/audit.decorators';
+import {
+  AUDIT_REASON_KEY,
+  AUDIT_METADATA_KEY,
+} from '../decorators/audit.decorators';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -17,7 +20,10 @@ export class AuditInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const reason = this.reflector.get<string>(AUDIT_REASON_KEY, context.getHandler());
+    const reason = this.reflector.get<string>(
+      AUDIT_REASON_KEY,
+      context.getHandler(),
+    );
     const metadata = this.reflector.get<Record<string, any>>(
       AUDIT_METADATA_KEY,
       context.getHandler(),
@@ -28,7 +34,7 @@ export class AuditInterceptor implements NestInterceptor {
       if (reason) {
         this.auditContextService.setValue('reason', reason);
       }
-      
+
       if (metadata) {
         this.auditContextService.mergeContext({ metadata });
       }

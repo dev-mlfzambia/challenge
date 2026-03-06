@@ -12,7 +12,7 @@ export class StatusService {
   constructor(
     @InjectRepository(StatusEntity)
     private statusRepository: Repository<StatusEntity>,
-  ) { }
+  ) {}
 
   async create(createStatusDto: CreateStatusDto): Promise<StatusEntity> {
     const status = this.statusRepository.create(createStatusDto);
@@ -68,8 +68,11 @@ export class StatusService {
     await this.statusRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: StatusEntity[]; meta: PageMetaDto }> {
-    const queryBuilder = this.statusRepository.createQueryBuilder('status')
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: StatusEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.statusRepository
+      .createQueryBuilder('status')
       .withDeleted()
       .where('status.deletedAt IS NOT NULL')
       .orderBy('status.createdAt', pageOptionsDto.order)

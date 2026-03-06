@@ -19,7 +19,7 @@ import { AccrualStatus } from '../../constants/accrual-status';
 @ApiTags('Accruals')
 @Controller('api/v1/accruals')
 export class AccrualsController {
-  constructor(private readonly accrualsService: AccrualsService) { }
+  constructor(private readonly accrualsService: AccrualsService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -37,8 +37,14 @@ export class AccrualsController {
   @ApiOperation({ summary: 'Find all soft deleted accruals (paginated)' })
   @ApiResponse({ status: 200, description: 'List of soft deleted accruals.' })
   async findDeleted(@Query() pageOptionsDto: any) {
-    const { data, meta } = await this.accrualsService.findDeleted(pageOptionsDto);
-    return { data, meta, message: 'Soft deleted accruals retrieved successfully' };
+    const { data, meta } = await this.accrualsService.findDeleted(
+      pageOptionsDto,
+    );
+    return {
+      data,
+      meta,
+      message: 'Soft deleted accruals retrieved successfully',
+    };
   }
 
   @Get()

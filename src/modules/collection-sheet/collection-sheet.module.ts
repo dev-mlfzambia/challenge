@@ -8,6 +8,6 @@ import { LoanScheduleEntity } from '../loan-schedule/entities/loan-schedule.enti
   imports: [TypeOrmModule.forFeature([LoanScheduleEntity])],
   controllers: [CollectionSheetController],
   providers: [CollectionSheetService],
-  exports: [CollectionSheetService]
+  exports: [CollectionSheetService],
 })
 export class CollectionSheetModule {}

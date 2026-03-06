@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { AuditService, AuditQueryOptions } from '../src/modules/audit/audit.service';
+import {
+  AuditService,
+  AuditQueryOptions,
+} from '../src/modules/audit/audit.service';
 import { AuditContextService } from '../src/modules/audit/audit-context.service';
 import { Audit } from '../src/modules/audit/entities/audit.entity';
 import { AuditSubscriber } from '../src/entity-subscribers/audit.subscriber';
@@ -34,7 +37,7 @@ describe('Audit System Integration Tests', () => {
     auditService = module.get<AuditService>(AuditService);
     auditContextService = module.get<AuditContextService>(AuditContextService);
     dataSource = module.get<DataSource>(DataSource);
-    
+
     auditRepository = dataSource.getRepository(Audit);
     userRepository = dataSource.getRepository(UserEntity);
   });
@@ -74,7 +77,7 @@ describe('Audit System Integration Tests', () => {
       });
 
       expect(auditTrails).toHaveLength(1);
-      
+
       const auditTrail = auditTrails[0];
       expect(auditTrail.event).toBe('created');
       expect(auditTrail.userId).toBe('test-user-id');
@@ -113,14 +116,14 @@ describe('Audit System Integration Tests', () => {
 
       // Check audit trail was created for update
       const auditTrails = await auditRepository.find({
-        where: { 
+        where: {
           auditableType: 'UserEntity',
           event: 'updated',
         },
       });
 
       expect(auditTrails).toHaveLength(1);
-      
+
       const auditTrail = auditTrails[0];
       expect(auditTrail.event).toBe('updated');
       expect(auditTrail.auditableId).toBe(savedUser.id);
@@ -155,14 +158,14 @@ describe('Audit System Integration Tests', () => {
 
       // Check audit trail was created for soft delete
       const auditTrails = await auditRepository.find({
-        where: { 
+        where: {
           auditableType: 'UserEntity',
           event: 'deleted',
         },
       });
 
       expect(auditTrails).toHaveLength(1);
-      
+
       const auditTrail = auditTrails[0];
       expect(auditTrail.event).toBe('deleted');
       expect(auditTrail.auditableId).toBe(savedUser.id);
@@ -187,12 +190,12 @@ describe('Audit System Integration Tests', () => {
       const results = await Promise.all([
         auditContextService.run(context1, async () => {
           // Simulate async operation
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           return auditContextService.getContext();
         }),
         auditContextService.run(context2, async () => {
           // Simulate async operation
-          await new Promise(resolve => setTimeout(resolve, 15));
+          await new Promise((resolve) => setTimeout(resolve, 15));
           return auditContextService.getContext();
         }),
       ]);
@@ -217,10 +220,13 @@ describe('Audit System Integration Tests', () => {
 
       const result = await auditContextService.run(outerContext, async () => {
         const outerCtx = auditContextService.getContext();
-        
-        const innerResult = await auditContextService.run(innerContext, async () => {
-          return auditContextService.getContext();
-        });
+
+        const innerResult = await auditContextService.run(
+          innerContext,
+          async () => {
+            return auditContextService.getContext();
+          },
+        );
 
         return { outer: outerCtx, inner: innerResult };
       });
@@ -285,12 +291,8 @@ describe('Audit System Integration Tests', () => {
 
     it('should generate audit statistics', async () => {
       // Create sample audit data
-      const eventTypes = [
-        'created',
-        'updated',
-        'deleted',
-      ];
-      
+      const eventTypes = ['created', 'updated', 'deleted'];
+
       for (let i = 0; i < 30; i++) {
         await auditRepository.save(
           auditRepository.create({

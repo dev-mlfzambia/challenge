@@ -1,4 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SeederService } from './seeder.service';
 import { Auth } from 'src/decorators';
@@ -13,7 +20,10 @@ export class SeederController {
   @Post('/seed-6-month-loan-tables')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Seed loan products' })
-  @ApiResponse({ status: 200, description: 'Loan products seeded successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Loan products seeded successfully.',
+  })
   async seed6MonthsLoanTable() {
     const message = await this.seederService.seed6MonthsLoanTable();
     return { message };

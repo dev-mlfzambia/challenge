@@ -17,7 +17,12 @@ import { OfficeModule } from '../office/office.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([LoanEntity, LoanScheduleEntity, ClientEntity, LoanTable]),
+    TypeOrmModule.forFeature([
+      LoanEntity,
+      LoanScheduleEntity,
+      ClientEntity,
+      LoanTable,
+    ]),
     StatusModule,
     ProductModule,
     ClientModule,

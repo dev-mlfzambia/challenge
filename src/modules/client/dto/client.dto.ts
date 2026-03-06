@@ -37,7 +37,6 @@ class MiniBankDto {
   }
 }
 
-
 export class ClientDto extends AbstractDto {
   @ApiProperty()
   firstName: string;
@@ -128,10 +127,16 @@ export class ClientDto extends AbstractDto {
   @ApiProperty({ type: () => CenterDto })
   center: CenterDto;
 
-  @ApiProperty({ type: Boolean, description: 'Indicates if the client currently has an active loan.' })
+  @ApiProperty({
+    type: Boolean,
+    description: 'Indicates if the client currently has an active loan.',
+  })
   hasActiveLoan: boolean;
 
-  @ApiProperty({ type: Boolean, description: 'Indicates if the client currently has a pending loan.' })
+  @ApiProperty({
+    type: Boolean,
+    description: 'Indicates if the client currently has a pending loan.',
+  })
   hasPendingLoan: boolean;
 
   constructor(client: ClientEntity) {
@@ -167,10 +172,10 @@ export class ClientDto extends AbstractDto {
     this.activatedById = client.activatedById;
     this.bank = client.bank
       ? {
-        id: client.bank.id,
-        name: client.bank.name,
-        branchCode: client.bank.branchCode,
-      }
+          id: client.bank.id,
+          name: client.bank.name,
+          branchCode: client.bank.branchCode,
+        }
       : { id: '', name: '', branchCode: '' };
     this.group = client.group ? new MiniGroupDto(client.group) : undefined;
     this.center = client.center;
@@ -193,7 +198,6 @@ export class ClientDto extends AbstractDto {
       : false;
   }
 }
-
 
 export class MiniClientDto {
   @ApiPropertyOptional()
@@ -237,10 +241,16 @@ export class MiniClientDto {
   @ApiProperty({ type: () => MiniBankDto })
   bank: MiniBankDto;
 
-  @ApiProperty({ type: Boolean, description: 'Indicates if the client currently has an active loan.' })
+  @ApiProperty({
+    type: Boolean,
+    description: 'Indicates if the client currently has an active loan.',
+  })
   hasActiveLoan: boolean;
 
-  @ApiProperty({ type: Boolean, description: 'Indicates if the client currently has a pending loan.' })
+  @ApiProperty({
+    type: Boolean,
+    description: 'Indicates if the client currently has a pending loan.',
+  })
   hasPendingLoan: boolean;
 
   constructor(client: ClientEntity) {
@@ -263,7 +273,9 @@ export class MiniClientDto {
 
     // Determine if client has an active loan
     this.hasActiveLoan = Array.isArray(client.loans)
-      ? client.loans.some((loan) => loan.status === 'Active' || loan.status === 'Pending')
+      ? client.loans.some(
+          (loan) => loan.status === 'Active' || loan.status === 'Pending',
+        )
       : false;
 
     // Determine if client has a pending loan
@@ -277,5 +289,3 @@ export class MiniClientDtoListResponseDto extends PageResponseDto<MiniClientDto>
   @Type(() => MiniClientDto)
   data: MiniClientDto[];
 }
-
-
