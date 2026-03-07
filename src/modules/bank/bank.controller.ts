@@ -12,7 +12,7 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { PageOptionsDto } from 'src/common/dtos';
-import { RoleType } from 'src/constants';
+import { RoleType } from 'src/constants/role-type';
 import { Auth } from 'src/decorators';
 import { TypeOrmUniqueExceptionFilter } from 'src/filters/typeorm-unique-exception.filter';
 import { CreateBankDto } from './dto/create-bank.dto';
@@ -22,7 +22,7 @@ import { BankService } from './bank.service';
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/banks')
 export class BankController {
-  constructor(private readonly bankService: BankService) { }
+  constructor(private readonly bankService: BankService) {}
 
   @Auth([RoleType.CREDIT, RoleType.SUPER_USER])
   @Post()
@@ -37,7 +37,6 @@ export class BankController {
   async findAll(@Query() pageOptionsDto: PageOptionsDto) {
     return await this.bankService.findAll(pageOptionsDto);
   }
-
 
   @Auth([RoleType.CREDIT, RoleType.SUPER_USER])
   @Get('deleted')
