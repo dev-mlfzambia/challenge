@@ -167,7 +167,7 @@ export class GroupController {
   }
 
   @Delete(':id')
-  @Auth([RoleType.LOAN_OFFICER])
+  @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER])
   @ApiOperation({ summary: 'Delete a group by ID' })
   @ApiResponse({ status: 200, description: 'Group deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
