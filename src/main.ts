@@ -1,14 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import * as morgan from 'morgan';
-import * as config from 'config';
+import config from 'config';
 import { Logger, ValidationPipe } from '@nestjs/common';
-
 import { AppModule } from './app.module';
 import { setupSwagger } from './setup-swagger';
 import { readCsvFile } from './seeder';
 import * as express from 'express';
-
 const serverConfig = config.get('server');
 const dbConfig = config.get('db');
 const sessionConfig = config.get('Session');

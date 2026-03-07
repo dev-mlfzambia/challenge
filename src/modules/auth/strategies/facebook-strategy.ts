@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-facebook';
-import * as config from 'config';
+import config from 'config';
 
 const facebookConfig = config.get('facebook');
 

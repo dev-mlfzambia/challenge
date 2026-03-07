@@ -1,9 +1,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
-
 import { google, Auth } from 'googleapis';
-import * as config from 'config';
+import config from 'config';
 import { SocialAuthRegisterDto } from './dtos/social-auth.dto';
 
 const googleConfig = config.get('google');
