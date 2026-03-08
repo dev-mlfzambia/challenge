@@ -343,6 +343,13 @@ export class GroupService {
       // qb.andWhere(`grp.name ILIKE :search ESCAPE '\\'`, { search: `%${safe}%` });
     }
 
+    // Status filter
+    if (filters.status?.trim()) {
+      queryBuilder.andWhere('status.name = :status', {
+        status: filters.status,
+      });
+    }
+
     // Pagination
     queryBuilder
       .orderBy('group.createdAt', pageOptionsDto.order)
