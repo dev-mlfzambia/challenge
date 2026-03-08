@@ -140,7 +140,7 @@ export class GroupController {
   findOne(@Param('id') id: string, @Request() req) {
     return this.groupService.findOne(id, req.user);
   }
-}
+
 
   @Patch(':id')
   @Auth([RoleType.LOAN_OFFICER])
