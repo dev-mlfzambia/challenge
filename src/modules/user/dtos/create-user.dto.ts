@@ -6,10 +6,9 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
-import { Column } from 'typeorm';
 
 import { Trim } from '../../../decorators/transform.decorators';
-import { RoleType } from 'src/constants';
+import { RoleType } from 'src/constants/role-type';
 import { OfficeEntity } from 'src/modules/office/entities/office.entity';
 
 export class CreateUserDto {
@@ -49,7 +48,7 @@ export class CreateUserDto {
   })
   readonly email: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: () => OfficeEntity })
   @IsString()
   @IsNotEmpty({
     message: 'Office is required',
@@ -64,6 +63,7 @@ export class CreateUserDto {
 
   @ApiProperty({
     enum: RoleType,
+    enumName: 'RoleType',
     description: 'User role',
   })
   @IsString()

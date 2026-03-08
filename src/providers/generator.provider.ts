@@ -1,9 +1,9 @@
 import { v1 as uuid } from 'uuid';
 import { Readable } from 'stream';
-import * as config from 'config';
+import config from 'config';
 
 const spaceConfig = config.get('spaces');
-import * as AWS from 'aws-sdk';
+import AWS from 'aws-sdk';
 import { extname } from 'path';
 import { BadRequestException } from '@nestjs/common';
 

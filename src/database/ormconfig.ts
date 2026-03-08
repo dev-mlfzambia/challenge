@@ -1,8 +1,8 @@
 import { SnakeNamingStrategy } from '../snake-naming.strategy';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import * as config from 'config';
+import config from 'config';
 import { readFileSync } from 'fs';
-import * as path from 'path';
+import path from 'path';
 import { UserSubscriber } from '../entity-subscribers';
 
 const dbConfig = config.get('db');

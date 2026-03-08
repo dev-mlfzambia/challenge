@@ -1,4 +1,11 @@
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  Index,
+  Relation,
+} from 'typeorm';
 import { AbstractEntity } from '../../../common/abstract.entity';
 import { LoanEntity } from '../../loan/entities/loan.entity';
 import { LoanScheduleEntity } from '../../loan-schedule/entities/loan-schedule.entity';
@@ -84,23 +91,23 @@ export class TransactionEntity
 
   // Relationships
   @ManyToOne(() => LoanEntity, (loan) => loan.transactions)
-  loan: LoanEntity;
+  loan: Relation<LoanEntity>;
 
   @ManyToOne(() => LoanScheduleEntity, (schedule) => schedule.transactions, {
     nullable: true,
   })
-  schedule?: LoanScheduleEntity;
+  schedule?: Relation<LoanScheduleEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.collectedTransactions, {
     nullable: true,
   })
-  collectedBy?: UserEntity;
+  collectedBy?: Relation<UserEntity>;
 
   @ManyToOne(() => TransactionEntity, (transaction) => transaction.reversedBy, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  reversalTransaction?: TransactionEntity;
+  reversalTransaction?: Relation<TransactionEntity>;
 
   @ManyToOne(
     () => TransactionEntity,
@@ -109,5 +116,5 @@ export class TransactionEntity
       nullable: true,
     },
   )
-  reversedBy?: TransactionEntity;
+  reversedBy?: Relation<TransactionEntity>;
 }

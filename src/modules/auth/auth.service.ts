@@ -4,13 +4,13 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { validateHash, generateHash } from 'src/common/utils'
+import { validateHash, generateHash } from 'src/common/utils';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { UserLoginDto } from './dtos/user-login.dto';
 
 import { google, Auth } from 'googleapis';
-import * as config from 'config';
+import config from 'config';
 
 const googleConfig = config.get('google');
 
@@ -30,7 +30,7 @@ export class AuthService {
     );
   }
 
-   async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string) {
     const user = await this.userService.findOne({ email });
     if (!user) {
       return { success: false, message: 'User not found.' };
@@ -52,11 +52,18 @@ export class AuthService {
     return { success: true, message: 'Password reset email sent.' };
   }
 
-  async resetPasswordWithToken(token: string, newPassword: string, confirmPassword: string) {
+  async resetPasswordWithToken(
+    token: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
     if (newPassword !== confirmPassword) {
       return { success: false, message: 'Passwords do not match.' };
     }
-    const resetToken = await this.passwordResetTokenRepo.findOne({ where: { token }, relations: ['user'] });
+    const resetToken = await this.passwordResetTokenRepo.findOne({
+      where: { token },
+      relations: ['user'],
+    });
     if (!resetToken || resetToken.used || resetToken.expiresAt < new Date()) {
       return { success: false, message: 'Invalid or expired token.' };
     }
@@ -75,7 +82,11 @@ export class AuthService {
     });
   }
 
-  async resetUserPassword(email: string, newPassword: string, confirmPassword: string) {
+  async resetUserPassword(
+    email: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) {
     if (newPassword !== confirmPassword) {
       return { success: false, message: 'Passwords do not match.' };
     }
@@ -83,7 +94,7 @@ export class AuthService {
     if (!user) {
       return { success: false, message: 'User not found.' };
     }
-  user.password = newPassword;
+    user.password = newPassword;
     await this.userService.save(user);
     return { success: true, message: 'Password reset successful.' };
   }

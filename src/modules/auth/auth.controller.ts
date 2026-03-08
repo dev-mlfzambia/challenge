@@ -28,7 +28,7 @@ import { FacebookAuthService } from './facebook-auth.service';
 import { GoogleAuthService } from './google-auth.service';
 
 import { Auth } from 'src/decorators/http.decorators';
-import { RoleType } from 'src/constants';
+import { RoleType } from 'src/constants/role-type';
 import { AdminResetPasswordDto } from './dtos/admin-reset-password.dto';
 import { RequestPasswordResetDto } from './dtos/request-password-reset.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
@@ -37,30 +37,29 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 @ApiTags('Auth')
 @Controller('api/v1/auth')
 export class AuthController {
-
   constructor(
     private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly googleAuthenticationService: GoogleAuthService,
     private readonly facebookAuthenticationService: FacebookAuthService,
-  ) { }
+  ) {}
 
-  // @Post('/register')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOkResponse({ type: UserDto, description: 'Successfully Registered' })
-  // async createUser(@Body() userRegisterDto: UserRegisterDto) {
-  //   const user = await this.userService.createUser(userRegisterDto);
-  //   const token = await this.authService.createAccessToken(user);
+  @Post('/register')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ type: UserDto, description: 'Successfully Registered' })
+  async createUser(@Body() userRegisterDto: UserRegisterDto) {
+    const user = await this.userService.createUser(userRegisterDto);
+    const token = await this.authService.createAccessToken(user);
 
-  //   const userDto = new UserDto(user);
-  //   const registeredUser = UserResponseDto.from({
-  //     userDto,
-  //     token,
-  //   });
-  //   registeredUser.message = 'User Registered Successfully';
+    const userDto = new UserDto(user);
+    const registeredUser = UserResponseDto.from({
+      userDto,
+      token,
+    });
+    registeredUser.message = 'User Registered Successfully';
 
-  //   return registeredUser;
-  // }
+    return registeredUser;
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -88,9 +87,12 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Validation or logic error.' })
   async adminResetPassword(@Body() dto: AdminResetPasswordDto) {
     const { email, newPassword, confirmPassword } = dto;
-    return this.authService.resetUserPassword(email, newPassword, confirmPassword);
+    return this.authService.resetUserPassword(
+      email,
+      newPassword,
+      confirmPassword,
+    );
   }
-
 
   @Post('/request-password-reset')
   @ApiOperation({ summary: 'Request password reset via email' })
@@ -103,13 +105,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password using token' })
   @ApiResponse({ status: 200, description: 'Password reset successful.' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPasswordWithToken(dto.token, dto.newPassword, dto.confirmPassword);
+    return this.authService.resetPasswordWithToken(
+      dto.token,
+      dto.newPassword,
+      dto.confirmPassword,
+    );
   }
 
   @Get('/google')
   @UseGuards(AuthGuard('google'))
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  async googleAuth(@Req() req) { }
+  async googleAuth(@Req() req) {}
 
   @Get('/google/redirect')
   @UseGuards(AuthGuard('google'))
