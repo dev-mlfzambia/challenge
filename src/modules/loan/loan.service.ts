@@ -3,6 +3,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -12,6 +14,7 @@ import {
   Between,
   In,
   DataSource,
+  Relation,
 } from 'typeorm';
 import { PageMetaDto } from 'src/common/dtos/page-meta.dto';
 import { PageOptionsDto } from 'src/common/dtos/page-options.dto';
@@ -41,7 +44,6 @@ import { ClientEntity } from '../client/entities/client.entity';
 import { last } from 'lodash';
 import { LoanQueryDto } from './dto/loan-query.dto';
 
-
 @Injectable()
 export class LoanService {
   private readonly logger = new Logger(LoanService.name);
@@ -61,14 +63,17 @@ export class LoanService {
     private loanTableService: LoanTableService,
     private loanScheduleService: LoanScheduleService,
     private officeService: OfficeService,
-    private groupPackageService: GroupPackageService,
+    @Inject(forwardRef(() => GroupPackageService))
+    private groupPackageService: any,
     private readonly dataSource: DataSource,
   ) {}
 
   /**
    * Bulk fetch clients with center and meeting dates using QueryBuilder
    */
-  private async batchFetchClientsWithCenter(clientIds: string[]): Promise<ClientEntity[]> {
+  private async batchFetchClientsWithCenter(
+    clientIds: string[],
+  ): Promise<ClientEntity[]> {
     return await this.clientRepository
       .createQueryBuilder('client')
       .leftJoinAndSelect('client.center', 'center')
@@ -80,7 +85,9 @@ export class LoanService {
   /**
    * Bulk fetch loan tables using QueryBuilder
    */
-  private async batchFetchLoanTables(loanTableIds: string[]): Promise<LoanTable[]> {
+  private async batchFetchLoanTables(
+    loanTableIds: string[],
+  ): Promise<LoanTable[]> {
     return await this.loanTableRepository
       .createQueryBuilder('loanTable')
       .where('loanTable.id IN (:...loanTableIds)', { loanTableIds })
@@ -91,7 +98,7 @@ export class LoanService {
         'loanTable.totalInterest',
         'loanTable.serviceFee',
         'loanTable.installment',
-        'loanTable.applicationFee'
+        'loanTable.applicationFee',
       ])
       .getMany();
   }
@@ -238,14 +245,15 @@ export class LoanService {
   private calculateStandardPayment(
     principal: number,
     monthlyInterestRate: number,
-    numberOfPayments: number
+    numberOfPayments: number,
   ): number {
     if (monthlyInterestRate === 0) {
       return principal / numberOfPayments;
     }
-    
+
     const powerTerm = Math.pow(1 + monthlyInterestRate, numberOfPayments);
-    const payment = principal * (monthlyInterestRate * powerTerm) / (powerTerm - 1);
+    const payment =
+      (principal * (monthlyInterestRate * powerTerm)) / (powerTerm - 1);
     return parseFloat(payment.toFixed(2));
   }
 
@@ -258,7 +266,7 @@ export class LoanService {
     serviceFee: number,
     applicationFee: number,
     totalInterest: number,
-    numberOfPayments: number
+    numberOfPayments: number,
   ): Array<{
     installmentNumber: number;
     principalDue: number;
@@ -270,38 +278,38 @@ export class LoanService {
   }> {
     const schedule = [];
     let remainingBalance = loanAmount;
-    
+
     // Calculate effective monthly rate dynamically based on loan table data
     // The first payment uses a higher rate, subsequent payments use 2.5%
     const firstPaymentRate = 0.027744; // 2.7744% for first payment
-    const standardMonthlyRate = 0.025;  // 2.5% for remaining payments
-    
+    const standardMonthlyRate = 0.025; // 2.5% for remaining payments
+
     for (let i = 1; i <= numberOfPayments; i++) {
       // Application fee only applies to first payment
       const currentApplicationFee = i === 1 ? applicationFee : 0;
-      
+
       // Use different interest rates for first payment vs subsequent payments
       const monthlyRate = i === 1 ? firstPaymentRate : standardMonthlyRate;
-      
+
       // Calculate interest on remaining balance
       const interestDue = remainingBalance * monthlyRate;
-      
+
       // For the first payment, we need to account for the application fee
       // The effective payment amount for principal+interest is reduced by the application fee
       let effectivePaymentAmount = installmentAmount;
       if (i === 1) {
         effectivePaymentAmount = installmentAmount - currentApplicationFee;
       }
-      
+
       // Principal payment = effective payment - service fee - interest
       const principalDue = effectivePaymentAmount - serviceFee - interestDue;
-      
+
       // Ensure principal doesn't exceed remaining balance
       const actualPrincipalDue = Math.min(principalDue, remainingBalance);
-      
+
       // Update remaining balance
       remainingBalance = Math.max(0, remainingBalance - actualPrincipalDue);
-      
+
       schedule.push({
         installmentNumber: i,
         principalDue: parseFloat(actualPrincipalDue.toFixed(2)),
@@ -309,75 +317,74 @@ export class LoanService {
         applicationFeeDue: currentApplicationFee,
         serviceFeeDue: serviceFee,
         totalDue: installmentAmount,
-        outstandingBalance: parseFloat(remainingBalance.toFixed(2))
+        outstandingBalance: parseFloat(remainingBalance.toFixed(2)),
       });
     }
-    
+
     return schedule;
   }
 
   /**
    * Create loan schedules in bulk for better performance with PROPER AMORTIZATION
    */
- private async createLoanSchedulesBulk(
-  manager: any,
-  loansData: { loan: LoanEntity; loanTableId: string }[],
-  groupPackage: GroupPackageEntity,
-  loanTablesMap: Map<string, LoanTable>,
-  clientsMap: Map<string, ClientEntity>
-): Promise<void> {
-  const allSchedules: LoanScheduleEntity[] = [];
+  private async createLoanSchedulesBulk(
+    manager: any,
+    loansData: { loan: LoanEntity; loanTableId: string }[],
+    groupPackage: GroupPackageEntity,
+    loanTablesMap: Map<string, LoanTable>,
+    clientsMap: Map<string, ClientEntity>,
+  ): Promise<void> {
+    const allSchedules: LoanScheduleEntity[] = [];
 
-  for (const { loan, loanTableId } of loansData) {
-    const loanTable = loanTablesMap.get(loanTableId);
-    const client = clientsMap.get(loan.clientId);
+    for (const { loan, loanTableId } of loansData) {
+      const loanTable = loanTablesMap.get(loanTableId);
+      const client = clientsMap.get(loan.clientId);
 
-    if (!loanTable || !client) continue;
+      if (!loanTable || !client) continue;
 
-    const repaymentDates = (loan.repaymentsDueDates as any)?.dates;
-    if (!repaymentDates || !Array.isArray(repaymentDates)) continue;
+      const repaymentDates = (loan.repaymentsDueDates as any)?.dates;
+      if (!repaymentDates || !Array.isArray(repaymentDates)) continue;
 
-    const amortizationSchedule = this.calculateDeclineBalanceSchedule(
-      loanTable.loanAmount,
-      loanTable.installment,
-      loanTable.serviceFee,
-      loanTable.applicationFee,
-      parseFloat(loanTable.totalInterest.toString()),
-      loan.numberOfRepayments
-    );
+      const amortizationSchedule = this.calculateDeclineBalanceSchedule(
+        loanTable.loanAmount,
+        loanTable.installment,
+        loanTable.serviceFee,
+        loanTable.applicationFee,
+        parseFloat(loanTable.totalInterest.toString()),
+        loan.numberOfRepayments,
+      );
 
-    for (const scheduleItem of amortizationSchedule) {
-      const schedule = manager.create(LoanScheduleEntity, {
-        loanId: loan.id,
-        staffId: loan.staffId,
-        centerId: client.center?.id,
-        officeId: loan.officeId,
-        installmentNumber: scheduleItem.installmentNumber,
-        dueDate: repaymentDates[scheduleItem.installmentNumber - 1],
-        principalDue: scheduleItem.principalDue,
-        interestDue: scheduleItem.interestDue,
-        serviceFeeDue: scheduleItem.serviceFeeDue,
-        applicationFeeDue: scheduleItem.applicationFeeDue,
-        totalDue: scheduleItem.totalDue,
-        balance: scheduleItem.outstandingBalance,
-        loan: loan,
-        groupPackage,
-        applicationFeePaid: 0,
-        principalPaid: 0,
-        interestPaid: 0,
-        penaltyPaid: 0,
-        penaltyDue: 0,
-        transactions: [],
-      });
-      allSchedules.push(schedule);
+      for (const scheduleItem of amortizationSchedule) {
+        const schedule = manager.create(LoanScheduleEntity, {
+          loanId: loan.id,
+          staffId: loan.staffId,
+          centerId: client.center?.id,
+          officeId: loan.officeId,
+          installmentNumber: scheduleItem.installmentNumber,
+          dueDate: repaymentDates[scheduleItem.installmentNumber - 1],
+          principalDue: scheduleItem.principalDue,
+          interestDue: scheduleItem.interestDue,
+          serviceFeeDue: scheduleItem.serviceFeeDue,
+          applicationFeeDue: scheduleItem.applicationFeeDue,
+          totalDue: scheduleItem.totalDue,
+          balance: scheduleItem.outstandingBalance,
+          loan: loan,
+          groupPackage,
+          applicationFeePaid: 0,
+          principalPaid: 0,
+          interestPaid: 0,
+          penaltyPaid: 0,
+          penaltyDue: 0,
+          transactions: [],
+        });
+        allSchedules.push(schedule);
+      }
+    }
+
+    if (allSchedules.length > 0) {
+      await manager.save(LoanScheduleEntity, allSchedules);
     }
   }
-
-  if (allSchedules.length > 0) {
-    await manager.save(LoanScheduleEntity, allSchedules);
-  }
-}
-
 
   /**
    * Optimized calculateRepaymentDatesByCenter that uses pre-fetched client data
@@ -392,7 +399,7 @@ export class LoanService {
         "Client's center or meeting schedule not found",
       );
     }
-    
+
     const meetingDates = client.center.meetingDates;
     const targetWeek = meetingDates.week; // 1-4
     const targetWeekday = meetingDates.day; // e.g. 'Tuesday'
@@ -493,7 +500,7 @@ export class LoanService {
    */
   private async validateActiveLoanRepayments(
     manager: any,
-    activeLoanIds: string[]
+    activeLoanIds: string[],
   ): Promise<void> {
     if (activeLoanIds.length === 0) return;
 
@@ -509,14 +516,14 @@ export class LoanService {
       .having('COUNT(*) = 3')
       .getRawMany();
 
-    const loansWithThreePayments = repaymentCounts.map(r => r.loanId);
+    const loansWithThreePayments = repaymentCounts.map((r) => r.loanId);
     const loansWithoutThreePayments = activeLoanIds.filter(
-      id => !loansWithThreePayments.includes(id)
+      (id) => !loansWithThreePayments.includes(id),
     );
 
     if (loansWithoutThreePayments.length > 0) {
       throw new BadRequestException(
-        'Cannot create loan. Some clients have not completed their first 3 repayments in their current active loans.'
+        'Cannot create loan. Some clients have not completed their first 3 repayments in their current active loans.',
       );
     }
   }
@@ -525,36 +532,46 @@ export class LoanService {
     createLoanDto: CreateLoanDto,
     user: UserEntity,
   ): Promise<{ loans: LoanEntity[]; loanPackage: GroupPackageEntity }> {
-    if (!createLoanDto.clientApplications || createLoanDto.clientApplications.length < 4) {
-      throw new BadRequestException("Can't create loan. You need a minimum of 4 clients in a group.");
+    if (
+      !createLoanDto.clientApplications ||
+      createLoanDto.clientApplications.length < 4
+    ) {
+      throw new BadRequestException(
+        "Can't create loan. You need a minimum of 4 clients in a group.",
+      );
     }
-    const clientIds = createLoanDto.clientApplications.map(app => app.clientId);
+    const clientIds = createLoanDto.clientApplications.map(
+      (app) => app.clientId,
+    );
     // Transactional logic
     try {
-      return await this.dataSource.transaction(async manager => {
+      return await this.dataSource.transaction(async (manager) => {
         // Check for pending loans for selected clients
         const pendingLoans = await manager.find(this.loanRepository.target, {
-          where: { 
-            clientId: In(clientIds), 
-            status: 'Pending'
+          where: {
+            clientId: In(clientIds),
+            status: 'Pending',
           },
         });
         if (pendingLoans.length > 0) {
           throw new BadRequestException(
-            'Cannot create loan. Some clients have pending loan applications that must be processed first.'
+            'Cannot create loan. Some clients have pending loan applications that must be processed first.',
           );
         }
 
         // Check for loans awaiting disbursement for selected clients
-        const awaitingDisbursementLoans = await manager.find(this.loanRepository.target, {
-          where: { 
-            clientId: In(clientIds), 
-            status: 'Awaiting Disbursement'
+        const awaitingDisbursementLoans = await manager.find(
+          this.loanRepository.target,
+          {
+            where: {
+              clientId: In(clientIds),
+              status: 'Awaiting Disbursement',
+            },
           },
-        });
+        );
         if (awaitingDisbursementLoans.length > 0) {
           throw new BadRequestException(
-            'Cannot create loan. Some clients have approved loans awaiting disbursement that must be disbursed first.'
+            'Cannot create loan. Some clients have approved loans awaiting disbursement that must be disbursed first.',
           );
         }
 
@@ -562,36 +579,47 @@ export class LoanService {
         const activeLoans = await manager.find(this.loanRepository.target, {
           where: { clientId: In(clientIds), status: 'Active' },
         });
-        
+
         // If there are active loans, validate repayment status
         if (activeLoans.length > 0) {
-          const activeLoanIds = activeLoans.map(loan => loan.id);
+          const activeLoanIds = activeLoans.map((loan) => loan.id);
           await this.validateActiveLoanRepayments(manager, activeLoanIds);
         }
 
         // Get the "Pending" status
         const pendingStatus = await this.statusService.findByName('Pending');
         if (!pendingStatus) {
-          throw new NotFoundException('Pending status not found. Please create it first.');
+          throw new NotFoundException(
+            'Pending status not found. Please create it first.',
+          );
         }
 
         // Get group information
-        const group = await this.groupService.findOne(createLoanDto.groupId, user);
+        const group = await this.groupService.findOne(
+          createLoanDto.groupId,
+          user,
+        );
         if (!group) {
           throw new NotFoundException('Group not found');
         }
 
         // Extract unique IDs for bulk fetching
-        const loanTableIds = createLoanDto.clientApplications.map(app => app.loanTableId);
+        const loanTableIds = createLoanDto.clientApplications.map(
+          (app) => app.loanTableId,
+        );
         // Bulk fetch all required data using QueryBuilder
         const [clients, loanTables] = await Promise.all([
           this.batchFetchClientsWithCenter(clientIds),
-          this.batchFetchLoanTables(loanTableIds)
+          this.batchFetchLoanTables(loanTableIds),
         ]);
 
         // Create lookup maps for O(1) access
-        const clientsMap = new Map(clients.map(client => [client.id, client]));
-        const loanTablesMap = new Map(loanTables.map(table => [table.id, table]));
+        const clientsMap = new Map(
+          clients.map((client) => [client.id, client]),
+        );
+        const loanTablesMap = new Map(
+          loanTables.map((table) => [table.id, table]),
+        );
 
         // Validate all clients and loan tables exist
         for (const app of createLoanDto.clientApplications) {
@@ -601,10 +629,14 @@ export class LoanService {
             throw new NotFoundException(`Client ${app.clientId} not found`);
           }
           if (!loanTable) {
-            throw new NotFoundException(`Loan table ${app.loanTableId} not found`);
+            throw new NotFoundException(
+              `Loan table ${app.loanTableId} not found`,
+            );
           }
           if (client.officeId !== user.office.id) {
-            throw new BadRequestException('Client and staff must belong to the same office');
+            throw new BadRequestException(
+              'Client and staff must belong to the same office',
+            );
           }
         }
 
@@ -618,11 +650,14 @@ export class LoanService {
           groupId: createLoanDto?.groupId,
         };
         // Use manager for groupPackageService if it supports custom manager, else fallback
-        const groupPackage = await this.groupPackageService.create(groupPackageDto);
+        const groupPackage = await this.groupPackageService.create(
+          groupPackageDto,
+        );
 
         // Prepare all loans for bulk creation
         const loansToCreate: LoanEntity[] = [];
-        const loansWithTableIds: { loan: LoanEntity; loanTableId: string }[] = [];
+        const loansWithTableIds: { loan: LoanEntity; loanTableId: string }[] =
+          [];
         const numberOfRepayments = 4;
         const disbursementDate = new Date(createLoanDto.targetDisbursementDate);
 
@@ -630,12 +665,14 @@ export class LoanService {
           const client = clientsMap.get(app.clientId);
           const loanTable = loanTablesMap.get(app.loanTableId);
           // Calculate repayment dates using optimized method
-          const repaymentsDueDates = this.calculateRepaymentDatesByCenterOptimized(
-            numberOfRepayments,
-            client,
-            disbursementDate,
-          );
-          const totalExpectedRepayment = loanTable.installment * numberOfRepayments;
+          const repaymentsDueDates =
+            this.calculateRepaymentDatesByCenterOptimized(
+              numberOfRepayments,
+              client,
+              disbursementDate,
+            );
+          const totalExpectedRepayment =
+            loanTable.installment * numberOfRepayments;
           const installments = {
             count: numberOfRepayments,
             amount: loanTable.installment,
@@ -659,7 +696,8 @@ export class LoanService {
             timeline: {
               disbursementDate: createLoanDto.targetDisbursementDate,
               firstRepaymentDate: repaymentsDueDates[0],
-              lastRepaymentDate: repaymentsDueDates[repaymentsDueDates.length - 1],
+              lastRepaymentDate:
+                repaymentsDueDates[repaymentsDueDates.length - 1],
               createdBy: user.id,
               createdAt: new Date(),
             },
@@ -690,23 +728,28 @@ export class LoanService {
         }
 
         // BULK SAVE ALL LOANS AT ONCE (transactional)
-        const savedLoans = await manager.save(this.loanRepository.target, loansToCreate);
+        const savedLoans = await manager.save(
+          this.loanRepository.target,
+          loansToCreate,
+        );
         for (let i = 0; i < savedLoans.length; i++) {
           loansWithTableIds[i].loan = savedLoans[i];
         }
 
         // BULK CREATE ALL LOAN SCHEDULES (not transactional if not supported, but should be)
-       await this.createLoanSchedulesBulk(
-        manager, // pass manager
-        loansWithTableIds,
-        groupPackage,
-        loanTablesMap,
-        clientsMap
-      );
-
+        await this.createLoanSchedulesBulk(
+          manager, // pass manager
+          loansWithTableIds,
+          groupPackage,
+          loanTablesMap,
+          clientsMap,
+        );
 
         // Update group package with repayment dates
-        const loanPackage = await this.groupPackageService.findOne(groupPackage.id, user);
+        const loanPackage = await this.groupPackageService.findOne(
+          groupPackage.id,
+          user,
+        );
         const updatedPack = await this.groupPackageService.update(
           loanPackage.id,
           {
@@ -717,7 +760,10 @@ export class LoanService {
         return { loans: savedLoans, loanPackage: updatedPack };
       });
     } catch (error) {
-      this.logger.error('Loan creation transaction failed', error.stack || error.message);
+      this.logger.error(
+        'Loan creation transaction failed',
+        error.stack || error.message,
+      );
       throw new BadRequestException(error.message);
     }
   }
@@ -861,27 +907,29 @@ export class LoanService {
     await this.loanRepository.delete(id);
   }
 
-   async softDelete(id: string): Promise<void> {
+  async softDelete(id: string): Promise<void> {
     await this.loanRepository.softDelete(id);
   }
 
-    async restore(id: string): Promise<void> {
-      await this.loanRepository.restore(id);
-    }
+  async restore(id: string): Promise<void> {
+    await this.loanRepository.restore(id);
+  }
 
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: LoanEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.loanRepository
+      .createQueryBuilder('loan')
+      .withDeleted()
+      .where('loan.deletedAt IS NOT NULL')
+      .orderBy('loan.createdAt', pageOptionsDto.order ?? 'DESC')
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: LoanEntity[]; meta: PageMetaDto }> {
-  const queryBuilder = this.loanRepository.createQueryBuilder('loan')
-    .withDeleted()
-    .where('loan.deletedAt IS NOT NULL')
-    .orderBy('loan.createdAt', pageOptionsDto.order ?? 'DESC')
-    .skip(pageOptionsDto.skip)
-    .take(pageOptionsDto.take);
-
-  const [data, itemCount] = await queryBuilder.getManyAndCount();
-  const meta = new PageMetaDto({ itemCount, pageOptionsDto });
-  return { data, meta };
-    }
+    const [data, itemCount] = await queryBuilder.getManyAndCount();
+    const meta = new PageMetaDto({ itemCount, pageOptionsDto });
+    return { data, meta };
+  }
   // Filter methods
   async findByClient(
     clientId: string,

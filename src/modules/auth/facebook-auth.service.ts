@@ -1,10 +1,8 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import axios from 'axios';
-
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
-
-import * as config from 'config';
+import config from 'config';
 import { SocialAuthRegisterDto } from './dtos/social-auth.dto';
 import { FindOneOptions, FindOptionsWhere } from 'typeorm';
 import e from 'express';

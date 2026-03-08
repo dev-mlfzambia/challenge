@@ -1,7 +1,6 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
-import * as config from 'config';
-
+import config from 'config';
 import { Injectable } from '@nestjs/common';
 
 const googleConfig = config.get('google');

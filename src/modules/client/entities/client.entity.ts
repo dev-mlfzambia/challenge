@@ -8,9 +8,9 @@ import {
   CreateDateColumn,
   DeepPartial,
   OneToMany,
+  Relation,
 } from 'typeorm';
 import { AbstractEntity } from '../../../common/abstract.entity';
-import { GroupEntity } from '../../group/entities/group.entity';
 import { UserEntity } from '../../user/user.entity';
 import { OfficeEntity } from '../../office/entities/office.entity';
 import { Center } from '../../center/entities/center.entity';
@@ -19,7 +19,8 @@ import { Province } from '../../provinces/entities/province.entity';
 import { Town } from '../../town/entities/town.entity';
 import { StatusEntity } from '../../status/entities/status.entity';
 import { BankEntity } from '../../bank/entities/bank.entity';
-import { LoanEntity } from 'src/modules/loan/entities/loan.entity';
+import { GroupEntity } from '../../group/entities/group.entity';
+import { LoanEntity } from '../../loan/entities/loan.entity';
 
 export interface IClientEntity {
   id: string;
@@ -118,20 +119,20 @@ export class ClientEntity extends AbstractEntity implements IClientEntity {
   blacklisted: boolean;
 
   @ManyToOne(() => StatusEntity, { nullable: false, eager: true })
-  status: StatusEntity;
+  status: Relation<StatusEntity>;
 
   @ManyToOne(() => Province, (province) => province.clients, {
     eager: true,
   })
-  province: Province;
+  province: Relation<Province>;
 
   @ManyToOne(() => Town, { nullable: true })
   @JoinColumn({ name: 'town_id' })
-  town?: Town;
+  town?: Relation<Town>;
 
   @ManyToOne(() => Language, { nullable: false, eager: true })
   @JoinColumn({ name: 'language_id' })
-  language: Language;
+  language: Relation<Language>;
 
   @Column({ name: 'office_id', type: 'uuid', nullable: false })
   officeId: string;
@@ -144,7 +145,7 @@ export class ClientEntity extends AbstractEntity implements IClientEntity {
 
   @ManyToOne(() => BankEntity, { nullable: false })
   @JoinColumn({ name: 'bank_id' })
-  bank: BankEntity;
+  bank: Relation<BankEntity>;
 
   @CreateDateColumn({ name: 'submitted_on', type: 'timestamp' })
   submittedOn: Date;
@@ -155,34 +156,34 @@ export class ClientEntity extends AbstractEntity implements IClientEntity {
   @Column({ name: 'audit_data', type: 'jsonb', nullable: false })
   auditData: object;
 
-  // Relationships
+  // Relationships - Now using actual classes with Relation wrapper
   @OneToOne(() => GroupEntity, (group) => group.groupLeader)
-  groupLed: GroupEntity;
+  groupLed: Relation<GroupEntity>;
 
   @ManyToOne(() => GroupEntity, (group) => group.clients, {
     nullable: true,
   })
-  group: GroupEntity;
+  group: Relation<GroupEntity>;
 
   @ManyToOne(() => UserEntity, { nullable: false })
   @JoinColumn({ name: 'staff_id' })
-  staff: UserEntity;
+  staff: Relation<UserEntity>;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'activated_by_id' })
-  activatedBy: UserEntity;
+  activatedBy: Relation<UserEntity>;
 
   @ManyToOne(() => OfficeEntity, { nullable: false })
   @JoinColumn({ name: 'office_id' })
-  office: OfficeEntity;
+  office: Relation<OfficeEntity>;
 
   @ManyToOne(() => Center, (center) => center.clients, {
     nullable: false,
   })
-  center: Center;
+  center: Relation<Center>;
 
   @OneToMany(() => LoanEntity, (loan) => loan.client)
-  loans: LoanEntity[];
+  loans: Relation<LoanEntity>[];
 }
 
 export { Language } from '../../language/entities/language.entity';
