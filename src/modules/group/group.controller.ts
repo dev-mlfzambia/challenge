@@ -72,7 +72,7 @@ export class GroupController {
   }
 
   @Get()
-  @Auth()
+  @Auth([RoleType.LOAN_OFFICER])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get all groups',
@@ -99,7 +99,7 @@ export class GroupController {
   }
 
   @Get('center/:centerId')
-  @Auth()
+  @Auth([RoleType.LOAN_OFFICER])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get all groups by center ID' })
   @ApiResponse({ status: 200, description: 'List of groups.' })
@@ -132,7 +132,7 @@ export class GroupController {
   }
 
   @Get(':id')
-  @Auth()
+  @Auth([RoleType.LOAN_OFFICER])
   @ApiOperation({ summary: 'Get a group by ID' })
   @ApiResponse({ status: 200, description: 'Group found.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
@@ -156,7 +156,7 @@ export class GroupController {
   }
 
   @Delete(':id')
-  @Auth([RoleType.LOAN_OFFICER])
+  @Auth([RoleType.LOAN_OFFICER]) 
   @ApiOperation({ summary: 'Delete a group by ID' })
   @ApiResponse({ status: 200, description: 'Group deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
