@@ -12,14 +12,13 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<RoleType[]>('roles', context.getHandler());
-    // console.log('roles:', roles);
+    
     if (_.isEmpty(roles)) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
     const user = <UserEntity>request.user;
-    // console.log('user:', user);
 
     return roles.includes(user.role);
   }

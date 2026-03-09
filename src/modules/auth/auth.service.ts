@@ -92,16 +92,13 @@ export class AuthService {
     const user = await this.userService.findOne({
       username: userLoginDto.username,
     });
-
-    // console.log(await validateHash("test@123", user.password));
-
+    
     const isPasswordValid = await validateHash(
       userLoginDto.password,
       user?.password,
     );
 
     if (!isPasswordValid) {
-      // console.log(user);
       throw new UnauthorizedException('Invalid credentials');
       
     }
