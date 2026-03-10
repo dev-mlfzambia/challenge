@@ -321,6 +321,12 @@ export class GroupService {
       .leftJoinAndSelect('createdBy.office', 'createdByOffice')
       .leftJoinAndSelect('center.meetingDates', 'meetingDates');
 
+      if(filters.status){
+        queryBuilder.andWhere('status.name = :statusName', {
+          statusName: filters.status
+        });
+      }
+
     // Role-based filtering
     if (user.role === RoleType.LOAN_OFFICER) {
       queryBuilder.where('staff.id = :staffId', { staffId: user.id });
@@ -456,7 +462,7 @@ export class GroupService {
       .addSelect(['meetingDates.id', 'meetingDates.week', 'meetingDates.day'])
       .leftJoin('group.staff', 'staff')
       .addSelect(['staff.id', 'staff.firstName', 'staff.lastName'])
-      .leftJoin('staff.office', 'office')
+      .leftJoinAndSelect('staff.office', 'office')
       .addSelect(['office.id', 'office.name'])
       .where('group.id = :id', { id })
       .getOne();
