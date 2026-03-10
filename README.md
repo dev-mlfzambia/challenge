@@ -254,3 +254,20 @@ Users without the required permissions should **not be able to access restricted
 MIT License.
 
 ---
+
+
+
+---
+## 🚀 My Solution: Task #3 & Security Implementation
+
+I have completed the core requirements for Task #3, focusing on system security, database integrity, and Role-Based Access Control (RBAC).
+
+### Key Technical Contributions:
+* **Security (RBAC):** Integrated a `RolesGuard` and `@Roles` decorator. I restricted high-risk actions like group deletion to `SUPER_USER` and activation to `BRANCH_MANAGER` to ensure financial compliance.
+* **Database Optimization:** Updated the `findOne` method to include a relational `JOIN` for the `office` entity, ensuring the frontend has access to location data without extra API calls.
+* **Dynamic Filtering:** Implemented server-side status filtering in the `getGroups` method, allowing staff to quickly view "Active" or "Pending" groups via query parameters.
+* **Business Rules:** Added logic to the `activate` method to ensure a group meets the minimum member requirement before transitioning to an active state.
+
+### How to Run:
+1. `npm install` (to regenerate node_modules)
+2. `npx cross-env NODE_ENV=development npm run start:dev`
