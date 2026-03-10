@@ -92,7 +92,7 @@ export class AuthService {
     const user = await this.userService.findOne({
       username: userLoginDto.username,
     });
-
+    
     const isPasswordValid = await validateHash(
       userLoginDto.password,
       user?.password,
@@ -100,6 +100,7 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+      
     }
 
     return user!;
