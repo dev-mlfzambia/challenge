@@ -13,102 +13,122 @@ export class CollectionSheetService {
   constructor(
     @InjectRepository(LoanScheduleEntity)
     private readonly loanScheduleRepository: Repository<LoanScheduleEntity>,
-  ) { }
+  ) {}
 
   // Logging utility for service
   private log(message: string, data?: any) {
     console.log(`[CollectionSheetService] ${message}`, data ?? '');
   }
 
-async getCollectionSheet(
-  filters: any,
-  pageOptionsDto: PageOptionsDto,
-  req: any
-): Promise<{ itemCount: number; data: any[]; pageMeta: PageMetaDto }> {
-  let { startDate, endDate, centerId, staffId, groupId, grouping = 'center' } = filters;
+  async getCollectionSheet(
+    filters: any,
+    pageOptionsDto: PageOptionsDto,
+    req: any,
+  ): Promise<{ itemCount: number; data: any[]; pageMeta: PageMetaDto }> {
+    const {
+      startDate,
+      endDate,
+      centerId,
+      staffId,
+      groupId,
+      grouping = 'center',
+    } = filters;
 
-  const today = new Date().toISOString().slice(0, 10);
-  // startDate = startDate ?? today;
-  // endDate = endDate ?? today;
+    const today = new Date().toISOString().slice(0, 10);
+    // startDate = startDate ?? today;
+    // endDate = endDate ?? today;
 
-  const queryBuilder = this.loanScheduleRepository.createQueryBuilder('schedule')
-    .leftJoinAndSelect('schedule.loan', 'loan')
-    .leftJoinAndSelect('loan.staff', 'staff')
-    .leftJoinAndSelect('loan.group', 'group')
-    .leftJoinAndSelect('group.center', 'center')
-    .leftJoinAndSelect('loan.client', 'client');
+    const queryBuilder = this.loanScheduleRepository
+      .createQueryBuilder('schedule')
+      .leftJoinAndSelect('schedule.loan', 'loan')
+      .leftJoinAndSelect('loan.staff', 'staff')
+      .leftJoinAndSelect('loan.group', 'group')
+      .leftJoinAndSelect('group.center', 'center')
+      .leftJoinAndSelect('loan.client', 'client');
 
-  // Role-based filter
-  const userRole = req.user.role;
-  const userId = req.user.id;
+    // Role-based filter
+    const userRole = req.user.role;
+    const userId = req.user.id;
 
-  console.log('User role:', req.user?.role);
-console.log('User ID:', req.user?.id);
-console.log('Original staffId filter:', staffId);
+    console.log('User role:', req.user?.role);
+    console.log('User ID:', req.user?.id);
+    console.log('Original staffId filter:', staffId);
 
+    if (userRole === RoleType.LOAN_OFFICER) {
+      // Loan officers see only their own schedules
+      queryBuilder.andWhere('schedule.staffId = :userId', { userId });
+    } else {
+      // For branch manager, IT, super user: optional staffId filter
+      if (staffId)
+        queryBuilder.andWhere('schedule.staffId = :staffId', { staffId });
+    }
 
-  if (userRole === RoleType.LOAN_OFFICER) {
-    // Loan officers see only their own schedules
-    queryBuilder.andWhere('schedule.staffId = :userId', { userId });
-  } else {
-    // For branch manager, IT, super user: optional staffId filter
-    if (staffId) queryBuilder.andWhere('schedule.staffId = :staffId', { staffId });
+    if (startDate)
+      queryBuilder.andWhere('schedule.dueDate >= :startDate', { startDate });
+    if (endDate)
+      queryBuilder.andWhere('schedule.dueDate <= :endDate', { endDate });
+    if (centerId) queryBuilder.andWhere('center.id = :centerId', { centerId });
+    if (groupId) queryBuilder.andWhere('group.id = :groupId', { groupId });
+
+    queryBuilder
+      .orderBy('schedule.createdAt', filters.orderBy)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
+
+    const [schedules, itemCount] = await queryBuilder.getManyAndCount();
+
+    const rows = schedules.map((schedule) => ({
+      loanId: schedule.loanId,
+      dueDate: schedule.dueDate,
+      principalDue: Number(schedule.principalDue),
+      totalDue: Number(schedule.totalDue),
+      status: schedule.status,
+      client: schedule.loan?.client
+        ? {
+            id: schedule.loan.client.id,
+            name: `${schedule.loan.client.firstName} ${schedule.loan.client.lastName}`.trim(),
+            mobileNumber: schedule.loan.client.mobileNumber,
+            bankAccountNumber: schedule.loan.client.bankAccountNumber,
+          }
+        : null,
+      staff: schedule.loan?.staff
+        ? { id: schedule.loan.staff.id, name: schedule.loan.staff.username }
+        : { id: schedule.staffId, name: null },
+      group: schedule.loan?.group
+        ? {
+            id: schedule.loan.group.id,
+            name: schedule.loan.group.name,
+            systemName: schedule.loan.group.systemName,
+          }
+        : null,
+      center: schedule.loan?.group?.center
+        ? {
+            id: schedule.loan.group.center.id,
+            name: schedule.loan.group.center.name,
+            centerCode: schedule.loan.group.center.centerCode,
+          }
+        : { id: schedule.centerId, name: null },
+      office: schedule.officeId
+        ? { id: schedule.officeId, name: schedule.loan?.group.officeName }
+        : null,
+    }));
+
+    const grouped = this.groupData(rows, grouping);
+    const pageMeta = new PageMetaDto({ itemCount, pageOptionsDto });
+
+    return { itemCount, data: grouped, pageMeta };
   }
 
-  if (startDate) queryBuilder.andWhere('schedule.dueDate >= :startDate', { startDate });
-  if (endDate) queryBuilder.andWhere('schedule.dueDate <= :endDate', { endDate });
-  if (centerId) queryBuilder.andWhere('center.id = :centerId', { centerId });
-  if (groupId) queryBuilder.andWhere('group.id = :groupId', { groupId });
-
-  queryBuilder
-    .orderBy('schedule.createdAt', filters.orderBy)
-    .skip(pageOptionsDto.skip)
-    .take(pageOptionsDto.take);
-
-  const [schedules, itemCount] = await queryBuilder.getManyAndCount();
-
-  const rows = schedules.map(schedule => ({
-    loanId: schedule.loanId,
-    dueDate: schedule.dueDate,
-    principalDue: Number(schedule.principalDue),
-    totalDue: Number(schedule.totalDue),
-    status: schedule.status,
-    client: schedule.loan?.client
-      ? {
-          id: schedule.loan.client.id,
-          name: `${schedule.loan.client.firstName} ${schedule.loan.client.lastName}`.trim(),
-          mobileNumber: schedule.loan.client.mobileNumber,
-          bankAccountNumber: schedule.loan.client.bankAccountNumber,
-        }
-      : null,
-    staff: schedule.loan?.staff
-      ? { id: schedule.loan.staff.id, name: schedule.loan.staff.username }
-      : { id: schedule.staffId, name: null },
-    group: schedule.loan?.group
-      ? { id: schedule.loan.group.id, name: schedule.loan.group.name, systemName: schedule.loan.group.systemName }
-      : null,
-    center: schedule.loan?.group?.center
-      ? { id: schedule.loan.group.center.id, name: schedule.loan.group.center.name, centerCode: schedule.loan.group.center.centerCode }
-      : { id: schedule.centerId, name: null },
-    office: schedule.officeId
-      ? { id: schedule.officeId, name: schedule.loan?.group.officeName }
-      : null,
-  }));
-
-  const grouped = this.groupData(rows, grouping);
-  const pageMeta = new PageMetaDto({ itemCount, pageOptionsDto });
-
-  return { itemCount, data: grouped, pageMeta };
-}
-
-
   private groupData(rows: any[], grouping: string): any[] {
-    const groupKeyFn: Record<string, (row: any) => { id: string; name: string } | null> = {
-      center: row => row.center,
-      staff: row => row.staff,
-      group: row => row.group,
-      client: row => row.client,
-      office: row => row.office,
+    const groupKeyFn: Record<
+      string,
+      (row: any) => { id: string; name: string } | null
+    > = {
+      center: (row) => row.center,
+      staff: (row) => row.staff,
+      group: (row) => row.group,
+      client: (row) => row.client,
+      office: (row) => row.office,
     };
 
     const keyFn = groupKeyFn[grouping];
@@ -127,7 +147,6 @@ console.log('Original staffId filter:', staffId);
     return Object.values(grouped);
   }
 
-
   create(createCollectionSheetDto: CreateCollectionSheetDto) {
     this.log('Creating a new collection sheet', createCollectionSheetDto);
     return 'This action adds a new collectionSheet';
@@ -144,7 +163,10 @@ console.log('Original staffId filter:', staffId);
   }
 
   update(id: number, updateCollectionSheetDto: UpdateCollectionSheetDto) {
-    this.log(`Updating collection sheet with id ${id}`, updateCollectionSheetDto);
+    this.log(
+      `Updating collection sheet with id ${id}`,
+      updateCollectionSheetDto,
+    );
     return `This action updates a #${id} collectionSheet`;
   }
 

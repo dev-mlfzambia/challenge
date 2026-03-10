@@ -51,10 +51,12 @@ export class UserDto extends AbstractDto {
     this.avatar = entity.avatar;
     this.phone = entity.phone;
     this.createdAt = entity.createdAt;
-    this.office = entity.office ? {
-      id: entity.office.id,
-      name: entity.office.name,
-    } : undefined;
+    this.office = entity.office
+      ? {
+          id: entity.office.id,
+          name: entity.office.name,
+        }
+      : undefined;
   }
 }
 

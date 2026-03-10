@@ -23,7 +23,6 @@ import { StatusEnum } from 'src/constants';
 import { GroupPackageService } from '../group-package/group-package.service';
 import { ReverseTransactionDto } from './dto/reverse-transaction.dto';
 
-
 @Injectable()
 export class TransactionService {
   private readonly logger = new Logger(TransactionService.name); // <-- Add logger
@@ -37,7 +36,7 @@ export class TransactionService {
     private loanService: LoanService,
     private groupPackageService: GroupPackageService,
     private dataSource: DataSource,
-  ) { }
+  ) {}
 
   async create(createTransactionDto: CreateTransactionDto, user: UserEntity) {
     this.logger.log(`Creating transaction for user ${user.id}`); // <-- Log entry
@@ -52,7 +51,9 @@ export class TransactionService {
     if (repayments.length >= 1) {
       const transactions = [];
       for (const repayment of repayments) {
-        this.logger.debug(`Processing repayment for schedule ${repayment.scheduleId}`);
+        this.logger.debug(
+          `Processing repayment for schedule ${repayment.scheduleId}`,
+        );
         const schedule = await this.scheduleRepository.findOne({
           where: {
             id: repayment.scheduleId,
@@ -64,7 +65,9 @@ export class TransactionService {
           throw new NotFoundException('Schedule not found');
         }
         if (schedule.status === LoanScheduleStatus.PAID) {
-          this.logger.warn(`Installment for schedule ${schedule.id} is already paid`);
+          this.logger.warn(
+            `Installment for schedule ${schedule.id} is already paid`,
+          );
           throw new BadRequestException('Installment is already paid');
         }
         const creditTransaction: Partial<TransactionEntity> = {
@@ -87,11 +90,19 @@ export class TransactionService {
             'Installment amount is greater than the total due',
           );
         }
-        const { principalDue, interestDue, applicationFeeDue, serviceFeeDue } = schedule;
-        const transaction = await this.transactionRepository.save(creditTransaction);
-        this.logger.log(`Transaction ${transaction.id} saved for schedule ${schedule.id}`);
-        const principalPaid = repayment.amount - interestDue - applicationFeeDue - serviceFeeDue;
-        const totalPaid = parseFloat(repayment.amount?.toString()) + (parseFloat(schedule.totalPaid.toString()) || 0);
+        const { principalDue, interestDue, applicationFeeDue, serviceFeeDue } =
+          schedule;
+        const transaction = await this.transactionRepository.save(
+          creditTransaction,
+        );
+        this.logger.log(
+          `Transaction ${transaction.id} saved for schedule ${schedule.id}`,
+        );
+        const principalPaid =
+          repayment.amount - interestDue - applicationFeeDue - serviceFeeDue;
+        const totalPaid =
+          parseFloat(repayment.amount?.toString()) +
+          (parseFloat(schedule.totalPaid.toString()) || 0);
         const returnStatus = () => {
           if (totalPaid === 0) {
             return LoanScheduleStatus.PENDING;
@@ -106,28 +117,48 @@ export class TransactionService {
         };
         await this.loanScheduleService.update(schedule.id, {
           principalPaid: principalPaid,
-          interestPaid: parseFloat((repayment.amount - applicationFeeDue - serviceFeeDue - principalDue).toFixed(7)),
-          applicationFeePaid: repayment.amount - interestDue - principalDue - serviceFeeDue,
-          serviceFeePaid: repayment.amount - principalDue - interestDue - applicationFeeDue,
+          interestPaid: parseFloat(
+            (
+              repayment.amount -
+              applicationFeeDue -
+              serviceFeeDue -
+              principalDue
+            ).toFixed(7),
+          ),
+          applicationFeePaid:
+            repayment.amount - interestDue - principalDue - serviceFeeDue,
+          serviceFeePaid:
+            repayment.amount - principalDue - interestDue - applicationFeeDue,
           totalPaid: totalPaid,
           status: returnStatus(),
         });
         this.logger.log(`Loan schedule ${schedule.id} updated`);
         // If this is the 4th installment and is now fully paid, update loan and group package status
-        if (schedule.installmentNumber === 4 && returnStatus() === LoanScheduleStatus.PAID) {
+        if (
+          schedule.installmentNumber === 4 &&
+          returnStatus() === LoanScheduleStatus.PAID
+        ) {
           // Update loan status to Completed
           if (schedule.loan) {
-            await this.loanService.update(schedule.loan.id, { status: StatusEnum.Completed }, user);
-            this.logger.log(`Loan ${schedule.loan.id} status updated to Completed`);
+            await this.loanService.update(
+              schedule.loan.id,
+              { status: StatusEnum.Completed },
+              user,
+            );
+            this.logger.log(
+              `Loan ${schedule.loan.id} status updated to Completed`,
+            );
           }
           // Update group package status to Completed
           if (schedule.groupPackage) {
             await this.groupPackageService.update(
               schedule.groupPackage.id,
               { status: GroupPackageStatus.Completed },
-              user
+              user,
             );
-            this.logger.log(`Group package ${schedule.groupPackage.id} status updated to Completed`);
+            this.logger.log(
+              `Group package ${schedule.groupPackage.id} status updated to Completed`,
+            );
           }
         }
         transactions.push(transaction);
@@ -145,8 +176,11 @@ export class TransactionService {
     await this.transactionRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: any): Promise<{ data: TransactionEntity[]; meta: any }> {
-    const queryBuilder = this.transactionRepository.createQueryBuilder('tx')
+  async findDeleted(
+    pageOptionsDto: any,
+  ): Promise<{ data: TransactionEntity[]; meta: any }> {
+    const queryBuilder = this.transactionRepository
+      .createQueryBuilder('tx')
       .withDeleted()
       .where('tx.deletedAt IS NOT NULL')
       .orderBy('tx.createdAt', pageOptionsDto.order ?? 'DESC')
@@ -160,7 +194,9 @@ export class TransactionService {
 
   async reverseTransaction(dto: ReverseTransactionDto, user: UserEntity) {
     const { transactionId, reason } = dto;
-    this.logger.log(`Starting reversal for transaction ${transactionId} by user ${user.id}`);
+    this.logger.log(
+      `Starting reversal for transaction ${transactionId} by user ${user.id}`,
+    );
 
     const originalTx = await this.transactionRepository.findOne({
       where: { id: transactionId },
@@ -172,9 +208,17 @@ export class TransactionService {
       throw new NotFoundException('Transaction not found');
     }
 
-    if (![TransactionType.REPAYMENT, TransactionType.DISBURSEMENT].includes(originalTx.transactionType)) {
-      this.logger.warn(`Transaction ${transactionId} type ${originalTx.transactionType} cannot be reversed`);
-      throw new BadRequestException('Only REPAYMENT and DISBURSEMENT transactions can be reversed');
+    if (
+      ![TransactionType.REPAYMENT, TransactionType.DISBURSEMENT].includes(
+        originalTx.transactionType,
+      )
+    ) {
+      this.logger.warn(
+        `Transaction ${transactionId} type ${originalTx.transactionType} cannot be reversed`,
+      );
+      throw new BadRequestException(
+        'Only REPAYMENT and DISBURSEMENT transactions can be reversed',
+      );
     }
 
     return await this.dataSource.transaction(async (manager) => {
@@ -185,9 +229,11 @@ export class TransactionService {
       originalTx.collectedBy = user;
       originalTx.collectedById = user.id;
       originalTx.reversalTransaction = originalTx; // self-reference for zeroing
-      originalTx.reversedBy = originalTx;    // self-reference, could be null or same
+      originalTx.reversedBy = originalTx; // self-reference, could be null or same
       await manager.save(originalTx);
-      this.logger.log(`Transaction ${originalTx.id} zeroed with reversal fields populated`);
+      this.logger.log(
+        `Transaction ${originalTx.id} zeroed with reversal fields populated`,
+      );
 
       // Reset loan schedule if exists
       if (originalTx.schedule) {
@@ -199,11 +245,14 @@ export class TransactionService {
         const today = new Date();
         const dueDate = new Date(sched.dueDate);
         if (dueDate < today) sched.status = LoanScheduleStatus.OVERDUE;
-        else if (dueDate.toDateString() === today.toDateString()) sched.status = LoanScheduleStatus.DUE;
+        else if (dueDate.toDateString() === today.toDateString())
+          sched.status = LoanScheduleStatus.DUE;
         else sched.status = LoanScheduleStatus.PENDING;
 
         await manager.save(sched);
-        this.logger.log(`Loan schedule ${sched.id} reset with status ${sched.status}`);
+        this.logger.log(
+          `Loan schedule ${sched.id} reset with status ${sched.status}`,
+        );
       }
 
       // Reset loan
@@ -220,11 +269,14 @@ export class TransactionService {
         const gp = originalTx.schedule.groupPackage;
         gp.status = GroupPackageStatus.AWAITING_DISBURSEMENT;
         await manager.save(gp);
-        this.logger.log(`Group package ${gp.id} reset to AWAITING_DISBURSEMENT`);
+        this.logger.log(
+          `Group package ${gp.id} reset to AWAITING_DISBURSEMENT`,
+        );
       }
 
-      return { message: `Transaction ${transactionId} zeroed and reversal fields populated` };
+      return {
+        message: `Transaction ${transactionId} zeroed and reversal fields populated`,
+      };
     });
   }
-
 }

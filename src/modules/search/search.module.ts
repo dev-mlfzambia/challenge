@@ -15,7 +15,7 @@ import { ClientEntity } from '../client/entities/client.entity';
       GroupEntity,
       UserEntity,
       OfficeEntity,
-      ClientEntity
+      ClientEntity,
     ]),
   ],
   controllers: [SearchController],

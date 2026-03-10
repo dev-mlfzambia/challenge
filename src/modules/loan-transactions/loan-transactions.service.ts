@@ -11,7 +11,7 @@ export class LoanTransactionsService {
   constructor(
     @InjectRepository(LoanTransactionEntity)
     private loanTransactionRepository: Repository<LoanTransactionEntity>,
-  ) { }
+  ) {}
 
   async create(
     createDto: CreateLoanTransactionDto,
@@ -125,8 +125,11 @@ export class LoanTransactionsService {
     await this.loanTransactionRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: any): Promise<{ data: LoanTransactionEntity[]; meta: any }> {
-    const queryBuilder = this.loanTransactionRepository.createQueryBuilder('tx')
+  async findDeleted(
+    pageOptionsDto: any,
+  ): Promise<{ data: LoanTransactionEntity[]; meta: any }> {
+    const queryBuilder = this.loanTransactionRepository
+      .createQueryBuilder('tx')
       .withDeleted()
       .where('tx.deletedAt IS NOT NULL')
       .orderBy('tx.createdAt', pageOptionsDto.order ?? 'DESC')

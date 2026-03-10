@@ -15,37 +15,37 @@ export class GroupPackageBalanceResponseDto {
 
   @ApiProperty({
     description: 'Total outstanding balance',
-    example: 15000.00,
+    example: 15000.0,
   })
   totalBalance: number;
 
   @ApiProperty({
     description: 'Principal amount outstanding',
-    example: 12000.00,
+    example: 12000.0,
   })
   principalOutstanding: number;
 
   @ApiProperty({
     description: 'Interest amount outstanding',
-    example: 2500.00,
+    example: 2500.0,
   })
   interestOutstanding: number;
 
   @ApiProperty({
     description: 'Penalty amount outstanding',
-    example: 300.00,
+    example: 300.0,
   })
   penaltyOutstanding: number;
 
   @ApiProperty({
     description: 'Application fee outstanding',
-    example: 200.00,
+    example: 200.0,
   })
   applicationFeeOutstanding: number;
 
   @ApiProperty({
     description: 'Service fee outstanding',
-    example: 0.00,
+    example: 0.0,
   })
   serviceFeeOutstanding: number;
 

@@ -35,7 +35,10 @@ import { BulkDisburseGroupPackagesDto } from './dto';
 import { StatusEntity } from '../status/entities/status.entity';
 import { LoanScheduleEntity } from '../loan-schedule/entities/loan-schedule.entity';
 import { LoanScheduleStatus } from 'src/constants/loan-schedule-status';
-import { TransactionEntity, TransactionType } from '../transaction/entities/transaction.entity';
+import {
+  TransactionEntity,
+  TransactionType,
+} from '../transaction/entities/transaction.entity';
 import { RoleType, StatusEnum } from 'src/constants';
 import { GeneratorProvider } from '../../providers/generator.provider';
 
@@ -103,16 +106,19 @@ export class GroupPackageService {
     @InjectRepository(LoanScheduleEntity)
     private readonly loanScheduleRepository: Repository<LoanScheduleEntity>,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   /**
-    * Migrate base64 agreementForm files to DigitalOcean Spaces for all GroupPackages and Loans
-    * - Only migrates if agreementForm is base64 (not already a URL)
-    * - Updates agreementForm to URL after upload
-    * - Logs successes and failures
-    * - Idempotent: skips if already a URL
-    */
-  async migrateAgreementFormsToSpaces(): Promise<{ migrated: any[]; failed: any[] }> {
+   * Migrate base64 agreementForm files to DigitalOcean Spaces for all GroupPackages and Loans
+   * - Only migrates if agreementForm is base64 (not already a URL)
+   * - Updates agreementForm to URL after upload
+   * - Logs successes and failures
+   * - Idempotent: skips if already a URL
+   */
+  async migrateAgreementFormsToSpaces(): Promise<{
+    migrated: any[];
+    failed: any[];
+  }> {
     const logger = new Logger('AgreementFormMigration');
     const migrated = [];
     const failed = [];
@@ -128,14 +134,16 @@ export class GroupPackageService {
     for (const groupPackage of groupPackages) {
       // Find the first loan with a base64 agreementForm
       const base64Loan = groupPackage.loans.find(
-        (l) => l.agreementForm && !l.agreementForm.startsWith('http')
+        (l) => l.agreementForm && !l.agreementForm.startsWith('http'),
       );
       if (!base64Loan) continue;
       try {
         // Try to parse base64 header
         const match = base64Loan.agreementForm.match(/^data:(.+);base64,(.+)$/);
         if (!match) {
-          logger.warn(`GroupPackage ${groupPackage.id}: agreementForm is not valid base64, skipping.`);
+          logger.warn(
+            `GroupPackage ${groupPackage.id}: agreementForm is not valid base64, skipping.`,
+          );
           continue;
         }
         const mimeType = match[1];
@@ -150,21 +158,26 @@ export class GroupPackageService {
           size: buffer.length,
         };
         // Upload to Spaces
-        const uploadResult = await GeneratorProvider.s3FileUpload(file, 'agreement-forms');
+        const uploadResult = await GeneratorProvider.s3FileUpload(
+          file,
+          'agreement-forms',
+        );
         // Update all loans in this package with the same base64 agreementForm
         const loansToUpdate = groupPackage.loans.filter(
-          (l) => l.agreementForm === base64Loan.agreementForm
+          (l) => l.agreementForm === base64Loan.agreementForm,
         );
         for (const loan of loansToUpdate) {
           loan.agreementForm = uploadResult.Location;
           await this.loanRepository.save(loan);
           migrated.push({ loanId: loan.id, url: uploadResult.Location });
-          logger.log(`Loan ${loan.id}: agreementForm migrated to ${uploadResult.Location}`);
+          logger.log(
+            `Loan ${loan.id}: agreementForm migrated to ${uploadResult.Location}`,
+          );
         }
       } catch (err) {
         // Mark all loans in this package as failed for this base64
         const loansToUpdate = groupPackage.loans.filter(
-          (l) => l.agreementForm === base64Loan.agreementForm
+          (l) => l.agreementForm === base64Loan.agreementForm,
         );
         for (const loan of loansToUpdate) {
           failed.push({ loanId: loan.id, error: err.message });
@@ -176,107 +189,109 @@ export class GroupPackageService {
   }
 
   /**
-* Calculate dashboard metrics for Super User Dashboard
-*/
+   * Calculate dashboard metrics for Super User Dashboard
+   */
   async getSuperUserDashboardMetrics(): Promise<DashboardMetricsDto> {
     const activeStatus = await this.statusRepository.findOne({
-      where: { name: "Active" },
+      where: { name: 'Active' },
     });
 
     // 1. Total Amount (pending + partially paid)
     const totalAmountRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .select("COALESCE(SUM(ls.balance), 0)", "total")
-      .where("ls.status IN (:...statuses)", {
+      .createQueryBuilder('ls')
+      .select('COALESCE(SUM(ls.balance), 0)', 'total')
+      .where('ls.status IN (:...statuses)', {
         statuses: [LoanScheduleStatus.PENDING],
       })
       .getRawOne();
 
-    const totalAmount = parseFloat(totalAmountRow?.total ?? "0");
+    const totalAmount = parseFloat(totalAmountRow?.total ?? '0');
 
     // 2. Amount in Arrears (principal overdue)
     const arrearsRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
+      .createQueryBuilder('ls')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "amountInArrears"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'amountInArrears',
       )
-      .where("ls.dueDate < CURRENT_DATE")
-      .andWhere("ls.status = :status", {
+      .where('ls.dueDate < CURRENT_DATE')
+      .andWhere('ls.status = :status', {
         status: LoanScheduleStatus.OVERDUE,
       })
       .getRawOne();
 
-    const amountInArrears = parseFloat(arrearsRow?.amountInArrears || "0");
+    const amountInArrears = parseFloat(arrearsRow?.amountInArrears || '0');
 
     // 3. Portfolio Value (principalDue - principalPaid for active loans)
     const portfolioRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "portfolioValue"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'portfolioValue',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .getRawOne();
 
-    const portfolioValue = parseFloat(portfolioRow?.portfolioValue || "0");
+    const portfolioValue = parseFloat(portfolioRow?.portfolioValue || '0');
 
     // 4. PAR(1) – overdue *yesterday*
     const par1Row = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "par1Value"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'par1Value',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .andWhere((qb) => {
         const sub = qb
           .subQuery()
-          .select("ls2.loanId")
-          .from(LoanScheduleEntity, "ls2")
-          .where("ls2.dueDate <= CURRENT_DATE")
-          .andWhere("ls2.status = :overdueStatus", {
+          .select('ls2.loanId')
+          .from(LoanScheduleEntity, 'ls2')
+          .where('ls2.dueDate <= CURRENT_DATE')
+          .andWhere('ls2.status = :overdueStatus', {
             overdueStatus: LoanScheduleStatus.OVERDUE,
           })
           .getQuery();
 
-        return "ls.loanId IN " + sub;
+        return 'ls.loanId IN ' + sub;
       })
       .getRawOne();
 
-    const par1Value = parseFloat(par1Row?.par1Value || "0");
+    const par1Value = parseFloat(par1Row?.par1Value || '0');
     const par1Percentage =
       portfolioValue > 0 ? (par1Value / portfolioValue) * 100 : 0;
 
     // 5. PAR(30) – overdue ≥ 30 days
     const par30Row = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "par30Value"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'par30Value',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .andWhere((qb) => {
         const sub = qb
           .subQuery()
-          .select("ls2.loanId")
-          .from(LoanScheduleEntity, "ls2")
+          .select('ls2.loanId')
+          .from(LoanScheduleEntity, 'ls2')
           .where("ls2.dueDate <= CURRENT_DATE - INTERVAL '30 day'")
-          .andWhere("ls2.status = :overdueStatus", {
+          .andWhere('ls2.status = :overdueStatus', {
             overdueStatus: LoanScheduleStatus.OVERDUE,
           })
           .getQuery();
 
-        return "ls.loanId IN " + sub;
+        return 'ls.loanId IN ' + sub;
       })
       .getRawOne();
 
-    const par30Value = parseFloat(par30Row?.par30Value || "0");
+    const par30Value = parseFloat(par30Row?.par30Value || '0');
     const par30Percentage =
-      portfolioValue > 0 ? parseFloat(((par30Value / portfolioValue) * 100).toFixed(1)) : 0;
+      portfolioValue > 0
+        ? parseFloat(((par30Value / portfolioValue) * 100).toFixed(1))
+        : 0;
 
     return {
       totalExpected: totalAmount,
@@ -288,7 +303,6 @@ export class GroupPackageService {
       par30Value,
     };
   }
-
 
   async create(dto: CreateGroupPackageDto): Promise<GroupPackageEntity> {
     if (!dto?.loans?.length)
@@ -474,11 +488,13 @@ export class GroupPackageService {
             id: pkg.officeId,
             name: pkg.officeName,
           }),
-          center: pkg.centerId ? new CenterDto({
-            id: pkg.centerId,
-            name: pkg.centerName,
-            centerCode: pkg.centerCode,
-          }) : null,
+          center: pkg.centerId
+            ? new CenterDto({
+                id: pkg.centerId,
+                name: pkg.centerName,
+                centerCode: pkg.centerCode,
+              })
+            : null,
         }),
     );
 
@@ -537,10 +553,15 @@ export class GroupPackageService {
     user: UserEntity,
   ): Promise<GroupPackageEntity> {
     // Validate file type
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'application/pdf',
+    ];
     if (!allowedTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`
+        `Invalid file type. Allowed types: ${allowedTypes.join(', ')}`,
       );
     }
 
@@ -557,7 +578,9 @@ export class GroupPackageService {
 
     // Check user permissions
     if (user.role === 'loan_officer' && packageCheck.userId !== user.id) {
-      throw new ForbiddenException('You can only access your own group packages');
+      throw new ForbiddenException(
+        'You can only access your own group packages',
+      );
     }
 
     if (user.role !== 'loan_officer') {
@@ -581,7 +604,10 @@ export class GroupPackageService {
       .update(LoanEntity)
       .set({
         agreementForm: uploadResult.Location,
-        auditDate: () => `jsonb_set(audit_date, '{agreementFormUploadedBy}', '"${user.id}"') || jsonb_set(audit_date, '{agreementFormUploadedAt}', '"${new Date().toISOString()}"')`
+        auditDate: () =>
+          `jsonb_set(audit_date, '{agreementFormUploadedBy}', '"${
+            user.id
+          }"') || jsonb_set(audit_date, '{agreementFormUploadedAt}', '"${new Date().toISOString()}"')`,
       })
       .where('group_package_id = :packageId', { packageId })
       .execute();
@@ -611,8 +637,11 @@ export class GroupPackageService {
     await this.groupPackageRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: GroupPackageEntity[]; meta: PageMetaDto }> {
-    const queryBuilder = this.groupPackageRepository.createQueryBuilder('gp')
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: GroupPackageEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.groupPackageRepository
+      .createQueryBuilder('gp')
       .withDeleted()
       .where('gp.deletedAt IS NOT NULL')
       .orderBy('gp.createdAt', pageOptionsDto.order)
@@ -626,7 +655,9 @@ export class GroupPackageService {
 
   async approve(id: string, user: UserEntity): Promise<GroupPackageEntity> {
     if (user.role !== RoleType.BRANCH_MANAGER) {
-      throw new ForbiddenException('Only branch managers can approve group packages');
+      throw new ForbiddenException(
+        'Only branch managers can approve group packages',
+      );
     }
 
     const entity = this.groupPackageRepository
@@ -668,7 +699,6 @@ export class GroupPackageService {
       .getOne();
   }
 
-
   async bulkDisburse(dto: BulkDisburseGroupPackagesDto, user: UserEntity) {
     // Validate user permissions (already handled by guards, but double-check if needed)
     // Fetch group packages
@@ -678,7 +708,7 @@ export class GroupPackageService {
     });
     const summary = [];
     for (const pkg of groupPackages) {
-      let packageResult = {
+      const packageResult = {
         groupPackageId: pkg.id,
         groupName: pkg.groupName,
         success: true,
@@ -706,7 +736,9 @@ export class GroupPackageService {
           packageResult.disbursedLoanIds.push(loan.id);
         }
         // Update group package status if all loans are disbursed
-        const allDisbursed = pkg.loans.every((l) => l.status === GroupPackageStatus.ACTIVE);
+        const allDisbursed = pkg.loans.every(
+          (l) => l.status === GroupPackageStatus.ACTIVE,
+        );
         if (allDisbursed) {
           pkg.status = GroupPackageStatus.ACTIVE;
           await this.groupPackageRepository.save(pkg);
@@ -728,7 +760,6 @@ export class GroupPackageService {
     }
     return summary;
   }
-
 
   async reject(id: string, user: UserEntity): Promise<GroupPackageEntity> {
     // Only branch managers can reject
@@ -976,103 +1007,105 @@ export class GroupPackageService {
 
   async getTotalAmounts(user: UserEntity, logger: any = console): Promise<any> {
     const activeStatus = await this.statusRepository.findOne({
-      where: { name: "Active" },
+      where: { name: 'Active' },
     });
 
     // 1. Total Amount (pending + partially paid)
     const totalAmountRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .select("COALESCE(SUM(ls.balance), 0)", "total")
-      .where("ls.status IN (:...statuses)", {
+      .createQueryBuilder('ls')
+      .select('COALESCE(SUM(ls.balance), 0)', 'total')
+      .where('ls.status IN (:...statuses)', {
         statuses: [LoanScheduleStatus.PENDING],
       })
       .getRawOne();
 
-    const totalAmount = parseFloat(totalAmountRow?.total ?? "0");
+    const totalAmount = parseFloat(totalAmountRow?.total ?? '0');
 
     // 2. Amount in Arrears (principal overdue)
     const arrearsRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
+      .createQueryBuilder('ls')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "amountInArrears"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'amountInArrears',
       )
-      .where("ls.dueDate < CURRENT_DATE")
-      .andWhere("ls.status = :status", {
+      .where('ls.dueDate < CURRENT_DATE')
+      .andWhere('ls.status = :status', {
         status: LoanScheduleStatus.OVERDUE,
       })
       .getRawOne();
 
-    const amountInArrears = parseFloat(arrearsRow?.amountInArrears || "0");
+    const amountInArrears = parseFloat(arrearsRow?.amountInArrears || '0');
 
     // 3. Portfolio Value (principalDue - principalPaid for active loans)
     const portfolioRow = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "portfolioValue"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'portfolioValue',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .getRawOne();
 
-    const portfolioValue = parseFloat(portfolioRow?.portfolioValue || "0");
+    const portfolioValue = parseFloat(portfolioRow?.portfolioValue || '0');
 
     // 4. PAR(1) – overdue *yesterday*
     const par1Row = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "par1Value"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'par1Value',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .andWhere((qb) => {
         const sub = qb
           .subQuery()
-          .select("ls2.loanId")
-          .from(LoanScheduleEntity, "ls2")
-          .where("ls2.dueDate <= CURRENT_DATE")
-          .andWhere("ls2.status = :overdueStatus", {
+          .select('ls2.loanId')
+          .from(LoanScheduleEntity, 'ls2')
+          .where('ls2.dueDate <= CURRENT_DATE')
+          .andWhere('ls2.status = :overdueStatus', {
             overdueStatus: LoanScheduleStatus.OVERDUE,
           })
           .getQuery();
 
-        return "ls.loanId IN " + sub;
+        return 'ls.loanId IN ' + sub;
       })
       .getRawOne();
 
-    const par1Value = parseFloat(par1Row?.par1Value || "0");
+    const par1Value = parseFloat(par1Row?.par1Value || '0');
     const par1Percentage =
       portfolioValue > 0 ? (par1Value / portfolioValue) * 100 : 0;
 
     // 5. PAR(30) – overdue ≥ 30 days
     const par30Row = await this.loanScheduleRepository
-      .createQueryBuilder("ls")
-      .innerJoin("ls.loan", "l")
+      .createQueryBuilder('ls')
+      .innerJoin('ls.loan', 'l')
       .select(
-        "COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)",
-        "par30Value"
+        'COALESCE(SUM(ls.principalDue) - SUM(ls.principalPaid), 0)',
+        'par30Value',
       )
-      .where("l.status = :statusName", { statusName: activeStatus.name })
+      .where('l.status = :statusName', { statusName: activeStatus.name })
       .andWhere((qb) => {
         const sub = qb
           .subQuery()
-          .select("ls2.loanId")
-          .from(LoanScheduleEntity, "ls2")
+          .select('ls2.loanId')
+          .from(LoanScheduleEntity, 'ls2')
           .where("ls2.dueDate <= CURRENT_DATE - INTERVAL '30 day'")
-          .andWhere("ls2.status = :overdueStatus", {
+          .andWhere('ls2.status = :overdueStatus', {
             overdueStatus: LoanScheduleStatus.OVERDUE,
           })
           .getQuery();
 
-        return "ls.loanId IN " + sub;
+        return 'ls.loanId IN ' + sub;
       })
       .getRawOne();
 
-    const par30Value = parseFloat(par30Row?.par30Value || "0");
+    const par30Value = parseFloat(par30Row?.par30Value || '0');
     const par30Percentage =
-      portfolioValue > 0 ? parseFloat(((par30Value / portfolioValue) * 100).toFixed(1)) : 0;
+      portfolioValue > 0
+        ? parseFloat(((par30Value / portfolioValue) * 100).toFixed(1))
+        : 0;
 
     return {
       totalExpected: totalAmount,
@@ -1085,7 +1118,10 @@ export class GroupPackageService {
     };
   }
 
-  async getPackageDetails(id: string, user: UserEntity): Promise<GroupPackageEntity> {
+  async getPackageDetails(
+    id: string,
+    user: UserEntity,
+  ): Promise<GroupPackageEntity> {
     const entity = await this.groupPackageRepository
       .createQueryBuilder('gp')
       .select([
@@ -1101,7 +1137,7 @@ export class GroupPackageService {
         'gp.amount',
         'gp.totalExpectedRepayment',
         'gp.officeId',
-        'gp.repaymentDates'
+        'gp.repaymentDates',
       ])
       .leftJoinAndSelect('gp.user', 'user', 'user.id = gp.userId')
       .addSelect([
@@ -1111,13 +1147,10 @@ export class GroupPackageService {
         'user.lastName',
         'user.role',
         'user.phone',
-        'user.email'
+        'user.email',
       ])
       .leftJoinAndSelect('gp.office', 'office', 'office.id = gp.officeId')
-      .addSelect([
-        'office.id',
-        'office.name'
-      ])
+      .addSelect(['office.id', 'office.name'])
       .leftJoinAndSelect('gp.loans', 'loans')
       .addSelect([
         'loans.id',
@@ -1133,7 +1166,7 @@ export class GroupPackageService {
         'loans.numberOfRepayments',
         'loans.repaymentEvery',
         'loans.repaymentsDueDates',
-        'loans.businessType'
+        'loans.businessType',
       ])
       .leftJoinAndSelect('loans.client', 'client')
       .addSelect([
@@ -1143,7 +1176,7 @@ export class GroupPackageService {
         'client.gender',
         'client.emailAddress',
         'client.nationalIdNumber',
-        'client.mobileNumber'
+        'client.mobileNumber',
       ])
       .leftJoinAndSelect('loans.group', 'group')
       .addSelect([
@@ -1151,18 +1184,12 @@ export class GroupPackageService {
         'group.name',
         'group.systemName',
         'group.groupLeader',
-        'group.createdAt'
+        'group.createdAt',
       ])
       .leftJoinAndSelect('group.center', 'center')
-      .addSelect([
-        'center.id',
-        'center.name',
-        'center.centerCode'
-      ])
+      .addSelect(['center.id', 'center.name', 'center.centerCode'])
       .leftJoinAndSelect('center.meetingDates', 'meetingDates')
-      .addSelect([
-        'meetingDates.day'
-      ])
+      .addSelect(['meetingDates.day'])
       .where('gp.id = :id', { id })
       .getOne();
 
@@ -1189,7 +1216,10 @@ export class GroupPackageService {
     return entity;
   }
 
-  async getPackageLoanSchedules(id: string, pageOptionsDto: PageOptionsDto): Promise<{ data: LoanScheduleEntity[]; meta: PageMetaDto }> {
+  async getPackageLoanSchedules(
+    id: string,
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: LoanScheduleEntity[]; meta: PageMetaDto }> {
     // Get the total count first
     const totalCount = await this.loanScheduleRepository
       .createQueryBuilder('schedule')
@@ -1308,10 +1338,9 @@ export class GroupPackageService {
     return rows;
   }
 
-
   async getPackageTransactions(
     packageId: string,
-    pageOptionsDto: PageOptionsDto
+    pageOptionsDto: PageOptionsDto,
   ): Promise<{ data: TransactionEntity[]; meta: PageMetaDto }> {
     // Verify package exists
     const packageExists = await this.groupPackageRepository
@@ -1330,7 +1359,7 @@ export class GroupPackageService {
       .innerJoin('transaction.loan', 'loan')
       .where('loan.groupPackage = :packageId', { packageId })
       .andWhere('transaction.transactionType IN (:...types)', {
-        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT]
+        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT],
       })
       .getCount();
 
@@ -1342,7 +1371,7 @@ export class GroupPackageService {
       .innerJoin('loan.client', 'client')
       .where('loan.groupPackage = :packageId', { packageId })
       .andWhere('transaction.transactionType IN (:...types)', {
-        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT]
+        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT],
       })
       .orderBy('transaction.transactionDate', pageOptionsDto.order)
       .addOrderBy('transaction.createdAt', 'DESC')
@@ -1356,7 +1385,7 @@ export class GroupPackageService {
 
   async getPackageTransactionsByLoanId(
     loanId: string,
-    pageOptionsDto: PageOptionsDto
+    pageOptionsDto: PageOptionsDto,
   ): Promise<{ data: TransactionEntity[]; meta: PageMetaDto }> {
     // Verify package exists
     const loanExists = await this.loanRepository
@@ -1375,7 +1404,7 @@ export class GroupPackageService {
       .innerJoin('transaction.loan', 'loan')
       .where('loan.id = :loanId', { loanId })
       .andWhere('transaction.transactionType IN (:...types)', {
-        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT]
+        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT],
       })
       .getCount();
 
@@ -1387,7 +1416,7 @@ export class GroupPackageService {
       .innerJoin('loan.client', 'client')
       .where('loan.id = :loanId', { loanId })
       .andWhere('transaction.transactionType IN (:...types)', {
-        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT]
+        types: [TransactionType.DISBURSEMENT, TransactionType.REPAYMENT],
       })
       .orderBy('transaction.transactionDate', pageOptionsDto.order)
       .addOrderBy('transaction.createdAt', 'DESC')
@@ -1476,11 +1505,17 @@ export class GroupPackageService {
       groupPackageId: groupPackage.id,
       groupName: groupPackage.groupName,
       totalBalance: parseFloat(balanceQuery?.totalBalance || '0'),
-      principalOutstanding: parseFloat(balanceQuery?.principalOutstanding || '0'),
+      principalOutstanding: parseFloat(
+        balanceQuery?.principalOutstanding || '0',
+      ),
       interestOutstanding: parseFloat(balanceQuery?.interestOutstanding || '0'),
       penaltyOutstanding: parseFloat(balanceQuery?.penaltyOutstanding || '0'),
-      applicationFeeOutstanding: parseFloat(balanceQuery?.applicationFeeOutstanding || '0'),
-      serviceFeeOutstanding: parseFloat(balanceQuery?.serviceFeeOutstanding || '0'),
+      applicationFeeOutstanding: parseFloat(
+        balanceQuery?.applicationFeeOutstanding || '0',
+      ),
+      serviceFeeOutstanding: parseFloat(
+        balanceQuery?.serviceFeeOutstanding || '0',
+      ),
       lastUpdated: balanceQuery?.lastUpdated || groupPackage.updatedAt,
       status: groupPackage.status,
     };

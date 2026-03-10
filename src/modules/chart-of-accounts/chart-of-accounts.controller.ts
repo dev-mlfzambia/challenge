@@ -29,7 +29,7 @@ import { ChartOfAccountsService } from './chart-of-accounts.service';
 export class ChartOfAccountsController {
   constructor(
     private readonly chartOfAccountsService: ChartOfAccountsService,
-  ) { }
+  ) {}
 
   @Auth([RoleType.SUPER_USER])
   @Get()
@@ -49,8 +49,13 @@ export class ChartOfAccountsController {
   @Auth([RoleType.SUPER_USER])
   @Get('deleted')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Find all soft deleted chart of accounts (paginated)' })
-  @ApiResponse({ status: 200, description: 'List of soft deleted chart of accounts.' })
+  @ApiOperation({
+    summary: 'Find all soft deleted chart of accounts (paginated)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of soft deleted chart of accounts.',
+  })
   async findDeleted(@Query() query: PageOptionsDto) {
     const { data, meta } = await this.chartOfAccountsService.findDeleted(query);
     const accounts = data.map((account) => new ChartOfAccountsDto(account));

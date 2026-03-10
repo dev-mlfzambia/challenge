@@ -31,7 +31,7 @@ export class CenterService {
     private readonly clientRepository: Repository<ClientEntity>,
     @InjectRepository(GroupEntity)
     private readonly groupRepository: Repository<GroupEntity>,
-  ) { }
+  ) {}
 
   /**
    * Generate the next available 3-letter uppercase code in lexicographical order (AAA, AAB, ... ZZZ)
@@ -117,12 +117,16 @@ export class CenterService {
     return new CenterDto(await this.centerRepository.save(center));
   }
 
-
   /**
-    * Transfer a center from one loan officer to another
-    */
-  //  
-  async transferCenter(centerId: string, fromLoanOfficerId: string, toLoanOfficerId: string, req: any): Promise<CenterDto> {
+   * Transfer a center from one loan officer to another
+   */
+  //
+  async transferCenter(
+    centerId: string,
+    fromLoanOfficerId: string,
+    toLoanOfficerId: string,
+    req: any,
+  ): Promise<CenterDto> {
     return await this.centerRepository.manager.transaction(async (manager) => {
       // Find the center
       const center = await manager.findOne(Center, { where: { id: centerId } });
@@ -131,10 +135,14 @@ export class CenterService {
       }
       // Check current loan officer
       if (center.user !== fromLoanOfficerId) {
-        throw new BadRequestException('Center is not assigned to the specified current loan officer');
+        throw new BadRequestException(
+          'Center is not assigned to the specified current loan officer',
+        );
       }
       // Find new loan officer
-      const newOfficer = await this.userService.findOne({ id: toLoanOfficerId });
+      const newOfficer = await this.userService.findOne({
+        id: toLoanOfficerId,
+      });
       if (!newOfficer) {
         throw new NotFoundException('New loan officer not found');
       }
@@ -142,14 +150,18 @@ export class CenterService {
         throw new BadRequestException('New user is not a loan officer');
       }
       if (!newOfficer.office) {
-        throw new BadRequestException('New loan officer must be assigned to an office');
+        throw new BadRequestException(
+          'New loan officer must be assigned to an office',
+        );
       }
 
       // Transfer all clients in the center (direct and via groups)
       const clientRepo = manager.getRepository(ClientEntity);
       const groupRepo = manager.getRepository(GroupEntity);
-      const groups = await groupRepo.find({ where: { center: { id: centerId } } });
-      const groupIds = groups.map(g => g.id);
+      const groups = await groupRepo.find({
+        where: { center: { id: centerId } },
+      });
+      const groupIds = groups.map((g) => g.id);
 
       // Update all clients whose group is in these groups
       if (groupIds.length > 0) {
@@ -160,9 +172,13 @@ export class CenterService {
           .where('group_id IN (:...groupIds)', { groupIds })
           .execute();
         // Audit log for each client in those groups
-        const groupClients = await clientRepo.find({ where: { group: { id: In(groupIds) } } });
+        const groupClients = await clientRepo.find({
+          where: { group: { id: In(groupIds) } },
+        });
         for (const client of groupClients) {
-          let auditData = Array.isArray(client.auditData) ? client.auditData : [];
+          const auditData = Array.isArray(client.auditData)
+            ? client.auditData
+            : [];
           auditData.push({
             action: 'TRANSFER_CLIENT',
             entityType: 'Client',
@@ -178,7 +194,9 @@ export class CenterService {
         }
       }
       // Optionally, also update clients directly linked to the center (if any)
-      const directClients = await clientRepo.find({ where: { center: { id: centerId } } });
+      const directClients = await clientRepo.find({
+        where: { center: { id: centerId } },
+      });
       if (directClients.length > 0) {
         await clientRepo
           .createQueryBuilder()
@@ -187,7 +205,9 @@ export class CenterService {
           .where('center = :centerId', { centerId })
           .execute();
         for (const client of directClients) {
-          let auditData = Array.isArray(client.auditData) ? client.auditData : [];
+          const auditData = Array.isArray(client.auditData)
+            ? client.auditData
+            : [];
           auditData.push({
             action: 'TRANSFER_CLIENT',
             entityType: 'Client',
@@ -208,8 +228,18 @@ export class CenterService {
       await groupRepo
         .createQueryBuilder()
         .update(GroupEntity)
-        .set({ staff: newOfficer, staffName: `${newOfficer.firstName || ''} ${newOfficer.lastName || ''}`.trim() })
-        .set({ staff: newOfficer, staffName: `${newOfficer.firstName || ''} ${newOfficer.lastName || ''}`.trim() })
+        .set({
+          staff: newOfficer,
+          staffName: `${newOfficer.firstName || ''} ${
+            newOfficer.lastName || ''
+          }`.trim(),
+        })
+        .set({
+          staff: newOfficer,
+          staffName: `${newOfficer.firstName || ''} ${
+            newOfficer.lastName || ''
+          }`.trim(),
+        })
         .where('center = :centerId', { centerId })
         .execute();
 
@@ -218,25 +248,41 @@ export class CenterService {
       if (groupIds.length > 0) {
         // 2. Update all group packages for these groups
         const groupPackageRepo = manager.getRepository(GroupPackageEntity);
-        const groupPackages = await groupPackageRepo.find({ where: { groupId: In(groupIds) } });
-        const groupPackageIds = groupPackages.map(pkg => pkg.id);
+        const groupPackages = await groupPackageRepo.find({
+          where: { groupId: In(groupIds) },
+        });
+        const groupPackageIds = groupPackages.map((pkg) => pkg.id);
         await groupPackageRepo
           .createQueryBuilder()
           .update()
-          .set({ userId: newOfficer.id, username: `${newOfficer.firstName || ''} ${newOfficer.lastName || ''}`.trim() })
+          .set({
+            userId: newOfficer.id,
+            username: `${newOfficer.firstName || ''} ${
+              newOfficer.lastName || ''
+            }`.trim(),
+          })
           .where('groupId IN (:...groupIds)', { groupIds })
           .execute();
 
         // --- Update all loans in those group packages ---
         if (groupPackageIds.length > 0) {
           const loanRepo = manager.getRepository(LoanEntity);
-          const loans = await loanRepo.find({ where: { groupPackage: { id: In(groupPackageIds) } } });
-          const loanIds = loans.map(loan => loan.id);
+          const loans = await loanRepo.find({
+            where: { groupPackage: { id: In(groupPackageIds) } },
+          });
+          const loanIds = loans.map((loan) => loan.id);
           await loanRepo
             .createQueryBuilder()
             .update()
-            .set({ staffId: newOfficer.id, userName: `${newOfficer.firstName || ''} ${newOfficer.lastName || ''}`.trim() })
-            .where('group_package_id IN (:...groupPackageIds)', { groupPackageIds })
+            .set({
+              staffId: newOfficer.id,
+              userName: `${newOfficer.firstName || ''} ${
+                newOfficer.lastName || ''
+              }`.trim(),
+            })
+            .where('group_package_id IN (:...groupPackageIds)', {
+              groupPackageIds,
+            })
             .execute();
 
           // --- Update all loan schedules for those loans ---
@@ -254,7 +300,9 @@ export class CenterService {
 
       // Update center assignment
       center.user = newOfficer.id;
-      center.staffName = `${newOfficer.firstName || ''} ${newOfficer.lastName || ''}`.trim();
+      center.staffName = `${newOfficer.firstName || ''} ${
+        newOfficer.lastName || ''
+      }`.trim();
       center.office = newOfficer.office.id;
       center.officeName = newOfficer.office.name;
       await manager.save(center);
@@ -271,21 +319,30 @@ export class CenterService {
       .leftJoinAndSelect('center.meetingDates', 'meetingDates');
 
     if (user.role === RoleType.LOAN_OFFICER) {
-      queryBuilder = queryBuilder.where('center.user = :userId', { userId: user.id });
+      queryBuilder = queryBuilder.where('center.user = :userId', {
+        userId: user.id,
+      });
     } else {
       const officeIds = await this.getAllDescendantOfficeIds(user.office.id);
-      queryBuilder = queryBuilder.where('center.office IN (:...officeIds)', { officeIds });
+      queryBuilder = queryBuilder.where('center.office IN (:...officeIds)', {
+        officeIds,
+      });
     }
 
     // Name filter (case-insensitive, partial match)
     if (pageOptionsDto.name) {
-      queryBuilder = queryBuilder.andWhere('LOWER(center.name) LIKE LOWER(:name)', {
-        name: `%${pageOptionsDto.name}%`,
-      });
+      queryBuilder = queryBuilder.andWhere(
+        'LOWER(center.name) LIKE LOWER(:name)',
+        {
+          name: `%${pageOptionsDto.name}%`,
+        },
+      );
     }
 
     if (pageOptionsDto.userId) {
-      queryBuilder = queryBuilder.andWhere('center.user = :userId', { userId: pageOptionsDto.userId });
+      queryBuilder = queryBuilder.andWhere('center.user = :userId', {
+        userId: pageOptionsDto.userId,
+      });
     }
 
     queryBuilder
@@ -382,9 +439,11 @@ export class CenterService {
     await this.centerRepository.restore(id);
   }
 
-
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: Center[]; meta: PageMetaDto }> {
-    const queryBuilder = this.centerRepository.createQueryBuilder('center')
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: Center[]; meta: PageMetaDto }> {
+    const queryBuilder = this.centerRepository
+      .createQueryBuilder('center')
       .withDeleted()
       .where('center.deletedAt IS NOT NULL')
       .orderBy('center.createdAt', pageOptionsDto.order ?? 'DESC')
@@ -399,5 +458,4 @@ export class CenterService {
   async remove(id: string): Promise<void> {
     await this.centerRepository.delete(id);
   }
-
 }

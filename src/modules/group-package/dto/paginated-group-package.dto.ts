@@ -48,25 +48,31 @@ export class PaginatedGroupPackageDto {
   @ApiProperty({ type: () => [LoanDto] })
   loans?: LoanDto[];
 
-  @ApiProperty({ type: () => CenterDto})
+  @ApiProperty({ type: () => CenterDto })
   center?: CenterDto;
 
-  @ApiProperty({ type: () => OfficeDto})
+  @ApiProperty({ type: () => OfficeDto })
   office?: OfficeDto;
 
   @ApiProperty()
-  totalExpectedRepayment: number
+  totalExpectedRepayment: number;
 
   @ApiProperty()
-  amount: string
+  amount: string;
 
   @ApiProperty()
-  loanCount: number
+  loanCount: number;
 
-  @ApiProperty({ description: 'Date/time when the group package was created', example: '2025-09-17T12:34:56.789Z' })
+  @ApiProperty({
+    description: 'Date/time when the group package was created',
+    example: '2025-09-17T12:34:56.789Z',
+  })
   createdAt: string;
 
-  @ApiProperty({ description: 'Date/time when the group package was last updated', example: '2025-09-17T12:34:56.789Z' })
+  @ApiProperty({
+    description: 'Date/time when the group package was last updated',
+    example: '2025-09-17T12:34:56.789Z',
+  })
   updatedAt: string;
 
   constructor(partial: Partial<PaginatedGroupPackageDto>) {
@@ -82,7 +88,7 @@ export class PaginatedGroupPackageDto {
     this.totalExpectedRepayment = partial.totalExpectedRepayment;
     this.amount = partial.amount;
     this.loanCount = partial.loanCount;
-     if (partial.createdAt) {
+    if (partial.createdAt) {
       this.createdAt = new Date(partial.createdAt).toISOString();
     }
     if (partial.updatedAt) {
@@ -118,5 +124,4 @@ export class LoanDto {
 
   @ApiProperty()
   businessType: string;
-
 }

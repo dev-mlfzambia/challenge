@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PageMetaDto } from 'src/common/dtos/page-meta.dto';
 import { PageOptionsDto } from 'src/common/dtos/page-options.dto';
@@ -20,7 +24,10 @@ import { Center } from '../center/entities/center.entity';
 import { GroupEntity } from '../group/entities/group.entity';
 import { ClientEntity } from '../client/entities/client.entity';
 import { LoanEntity } from '../loan/entities/loan.entity';
-import { GroupPackageEntity, GroupPackageStatus } from '../group-package/entities/group-package.entity';
+import {
+  GroupPackageEntity,
+  GroupPackageStatus,
+} from '../group-package/entities/group-package.entity';
 import { LoanOfficerMetricsDto } from './dtos/loan-officer-metrics.dto';
 import { RoleType } from '../../constants/role-type';
 import { StatusEnum } from '../../constants/constants';
@@ -52,7 +59,7 @@ export class UserService {
           user.email,
           user.username,
           createUserDto.password,
-          user
+          user,
         );
       }
       return user;
@@ -127,42 +134,52 @@ export class UserService {
   save(user: UserEntity): Promise<UserEntity> {
     return this.userRepository.save(user);
   }
-    async softDeleteUser(id: string): Promise<UserEntity> {
-      const user = await this.userRepository.findOneBy({ id });
-      if (!user) throw new Error('User not found');
-      user.deletedAt = new Date();
-      return this.userRepository.save(user);
-    }
+  async softDeleteUser(id: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) throw new Error('User not found');
+    user.deletedAt = new Date();
+    return this.userRepository.save(user);
+  }
 
-    async restoreUser(id: string): Promise<UserEntity> {
-      const user = await this.userRepository.findOne({ where: { id }, withDeleted: true });
-      if (!user) throw new Error('User not found');
-      user.deletedAt = null;
-      return this.userRepository.save(user);
-    }
+  async restoreUser(id: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!user) throw new Error('User not found');
+    user.deletedAt = null;
+    return this.userRepository.save(user);
+  }
 
-  async getDeletedUsers(pageOptionsDto: PageOptionsDto): Promise<{ data: UserEntity[]; meta: PageMetaDto }> {
-      // Paginated deleted users
-      const queryBuilder = this.userRepository.createQueryBuilder('user')
-        .withDeleted()
-        .where('user.deletedAt IS NOT NULL')
-        .orderBy('user.createdAt', pageOptionsDto.order)
-        .skip(pageOptionsDto.skip)
-        .take(pageOptionsDto.take);
+  async getDeletedUsers(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: UserEntity[]; meta: PageMetaDto }> {
+    // Paginated deleted users
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .withDeleted()
+      .where('user.deletedAt IS NOT NULL')
+      .orderBy('user.createdAt', pageOptionsDto.order)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
 
-      const result = await queryBuilder.getMany();
-      const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
-      return { data: result, meta };
-    }
+    const result = await queryBuilder.getMany();
+    const meta = new PageMetaDto({ pageOptionsDto, itemCount: result.length });
+    return { data: result, meta };
+  }
 
-  async getLoanOfficerMetrics(loanOfficerId: string): Promise<LoanOfficerMetricsDto> {
+  async getLoanOfficerMetrics(
+    loanOfficerId: string,
+  ): Promise<LoanOfficerMetricsDto> {
     // Validate loan officer exists and has correct role
     const loanOfficer = await this.userRepository.findOne({
       where: { id: loanOfficerId, role: RoleType.LOAN_OFFICER },
     });
 
     if (!loanOfficer) {
-      throw new NotFoundException('Loan officer not found or user is not a loan officer');
+      throw new NotFoundException(
+        'Loan officer not found or user is not a loan officer',
+      );
     }
 
     // Get centers count
@@ -181,7 +198,7 @@ export class UserService {
         activeStatus: StatusEnum.ACTIVE,
       })
       .getRawOne();
-    
+
     const activeGroupsCount = parseInt(activeGroupsResult.count) || 0;
 
     // Get total groups for this loan officer
@@ -202,7 +219,7 @@ export class UserService {
         activeStatus: StatusEnum.ACTIVE,
       })
       .getRawOne();
-    
+
     const activeClientsCount = parseInt(activeClientsResult.count) || 0;
 
     // Get total clients for this loan officer
@@ -226,7 +243,9 @@ export class UserService {
       .createQueryBuilder('groupPackage')
       .select('COALESCE(SUM(groupPackage.amount), 0)', 'totalAmount')
       .where('groupPackage.userId = :loanOfficerId', { loanOfficerId })
-      .andWhere('groupPackage.status = :status', { status: GroupPackageStatus.ACTIVE })
+      .andWhere('groupPackage.status = :status', {
+        status: GroupPackageStatus.ACTIVE,
+      })
       .getRawOne();
 
     const principalAmountOfActiveLoanPackages = parseFloat(
@@ -243,6 +262,4 @@ export class UserService {
       principalAmountOfActiveLoanPackages,
     });
   }
-
-
 }

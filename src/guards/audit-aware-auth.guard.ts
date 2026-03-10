@@ -16,7 +16,7 @@ export class AuditAwareAuthGuard extends PassportAuthGuard('jwt') {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // First, run the standard JWT authentication
     const result = await super.canActivate(context);
-    
+
     if (!result) {
       return false;
     }
@@ -37,11 +37,11 @@ export class AuditAwareAuthGuard extends PassportAuthGuard('jwt') {
   }
 
   handleRequest<TUser = UserEntity>(
-    err: any, 
-    user: any, 
-    info: any, 
+    err: any,
+    user: any,
+    info: any,
     context: ExecutionContext,
-    status?: any
+    status?: any,
   ): TUser {
     // Handle the authentication result
     if (err || !user) {
@@ -50,7 +50,7 @@ export class AuditAwareAuthGuard extends PassportAuthGuard('jwt') {
 
     // Get the HTTP request
     const request = context.switchToHttp().getRequest();
-    
+
     // Ensure user is attached to request
     request.user = user;
 

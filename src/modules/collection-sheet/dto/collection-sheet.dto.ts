@@ -13,7 +13,10 @@ export class CollectionSheetDto extends AbstractDto {
   @ApiProperty({ description: 'Due date for repayment', example: '2025-09-07' })
   dueDate: string;
 
-  @ApiProperty({ description: 'Staff (loan officer) entity', type: () => StaffDto })
+  @ApiProperty({
+    description: 'Staff (loan officer) entity',
+    type: () => StaffDto,
+  })
   staff: StaffDto;
 
   @ApiProperty({ description: 'Center entity', type: () => CenterDto })
@@ -28,7 +31,7 @@ export class CollectionSheetDto extends AbstractDto {
   // @ApiProperty({ description: 'Group entity', type: () => GroupDto })
   // group: GroupDto;
 
-  @ApiProperty({ description: 'Amount due', example: 1000.00 })
+  @ApiProperty({ description: 'Amount due', example: 1000.0 })
   totalDue: number;
 
   @ApiProperty({ description: 'Status of the schedule', example: 'PENDING' })

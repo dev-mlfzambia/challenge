@@ -149,12 +149,17 @@ describe('LoanController', () => {
         createdAt: new Date().toISOString(),
       };
       // Simulate a failure in the service (e.g., DB error)
-      mockLoanService.create.mockRejectedValue(new Error('Simulated DB failure'));
+      mockLoanService.create.mockRejectedValue(
+        new Error('Simulated DB failure'),
+      );
       await expect(
-        controller.create(createLoanDto, { user: mockUser })
+        controller.create(createLoanDto, { user: mockUser }),
       ).rejects.toThrow('Simulated DB failure');
       // Optionally, check that no data is returned
-      expect(mockLoanService.create).toHaveBeenCalledWith(createLoanDto, mockUser);
+      expect(mockLoanService.create).toHaveBeenCalledWith(
+        createLoanDto,
+        mockUser,
+      );
     });
   });
 
@@ -166,13 +171,18 @@ describe('LoanController', () => {
 
       mockLoanService.findAll.mockResolvedValue([itemCount, mockLoans]);
 
-  const result = await controller.findAll(pageOptionsDto, { user: mockUser });
+      const result = await controller.findAll(pageOptionsDto, {
+        user: mockUser,
+      });
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Loans retrieved successfully');
       expect(result.data).toHaveLength(1);
       expect(result.data[0]).toBeInstanceOf(LoanDto);
-  expect(mockLoanService.findAll).toHaveBeenCalledWith(pageOptionsDto, mockUser);
+      expect(mockLoanService.findAll).toHaveBeenCalledWith(
+        pageOptionsDto,
+        mockUser,
+      );
     });
   });
 

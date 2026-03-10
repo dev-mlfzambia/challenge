@@ -11,13 +11,14 @@ export class LoanScheduleService {
   constructor(
     @InjectRepository(LoanScheduleEntity)
     private readonly loanScheduleRepository: Repository<LoanScheduleEntity>,
-  ) { }
+  ) {}
 
   async create(createDto: CreateLoanScheduleDto): Promise<LoanScheduleEntity> {
     // Resolve staffId, centerId, officeId from LoanEntity
     const { groupPackage, loanId, ...rest } = createDto;
     // Fetch loan
-    const loanRepo = this.loanScheduleRepository.manager.getRepository('LoanEntity');
+    const loanRepo =
+      this.loanScheduleRepository.manager.getRepository('LoanEntity');
     const loan = await loanRepo.findOne({ where: { id: loanId } });
     if (!loan) throw new Error('Loan not found');
     const entity = this.loanScheduleRepository.create({
@@ -82,8 +83,11 @@ export class LoanScheduleService {
     await this.loanScheduleRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: any): Promise<{ data: LoanScheduleEntity[]; meta: any }> {
-    const queryBuilder = this.loanScheduleRepository.createQueryBuilder('schedule')
+  async findDeleted(
+    pageOptionsDto: any,
+  ): Promise<{ data: LoanScheduleEntity[]; meta: any }> {
+    const queryBuilder = this.loanScheduleRepository
+      .createQueryBuilder('schedule')
       .withDeleted()
       .where('schedule.deletedAt IS NOT NULL')
       .orderBy('schedule.createdAt', pageOptionsDto.order ?? 'DESC')

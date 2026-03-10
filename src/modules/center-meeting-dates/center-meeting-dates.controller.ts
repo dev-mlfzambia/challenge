@@ -31,8 +31,15 @@ export class CenterMeetingDatesController {
 
   @Get('deleted')
   async findDeleted(@Query() query: PageOptionsDto) {
-    const { data, meta } = await this.centerMeetingDatesService.findDeleted(query);
-    return PageResponseDto.from(data, meta, 'Soft-deleted center meeting dates retrieved successfully', true);
+    const { data, meta } = await this.centerMeetingDatesService.findDeleted(
+      query,
+    );
+    return PageResponseDto.from(
+      data,
+      meta,
+      'Soft-deleted center meeting dates retrieved successfully',
+      true,
+    );
   }
 
   @Get(':id')

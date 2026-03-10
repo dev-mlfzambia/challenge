@@ -12,7 +12,7 @@ export class GenderService {
   constructor(
     @InjectRepository(GenderEntity)
     private genderRepository: Repository<GenderEntity>,
-  ) { }
+  ) {}
 
   async create(createGenderDto: CreateGenderDto): Promise<GenderEntity> {
     const gender = this.genderRepository.create(createGenderDto);
@@ -65,8 +65,11 @@ export class GenderService {
     await this.genderRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: GenderEntity[]; meta: PageMetaDto }> {
-    const queryBuilder = this.genderRepository.createQueryBuilder('gender')
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: GenderEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.genderRepository
+      .createQueryBuilder('gender')
       .withDeleted()
       .where('gender.deletedAt IS NOT NULL')
       .orderBy('gender.createdAt', pageOptionsDto.order)

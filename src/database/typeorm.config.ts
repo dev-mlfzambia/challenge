@@ -1,21 +1,44 @@
+import '../load-env';
 import { SnakeNamingStrategy } from '../snake-naming.strategy';
 import * as config from 'config';
 import { UserSubscriber } from '../entity-subscribers';
 import { DataSource } from 'typeorm';
-import { readFileSync } from 'fs';
-import * as path from 'path';
 
-const dbConfig = config.get('db');
+const fileConfig = config.get<any>('db') || {};
+const rawHost = process.env.DB_HOST ?? fileConfig.host;
+// Avoid using environment name (e.g. "Development") as DB hostname
+const resolvedHost =
+  rawHost === 'Development' || rawHost === 'development'
+    ? 'localhost'
+    : rawHost;
+const finalDbConfig = {
+  ...fileConfig,
+  host: resolvedHost,
+  port: Number(process.env.DB_PORT ?? fileConfig.port),
+  username: process.env.DB_USERNAME ?? fileConfig.username,
+  password: process.env.DB_PASSWORD ?? fileConfig.password,
+  database: process.env.DB_NAME ?? fileConfig.database,
+};
+
+console.log('DB CONFIG: ', {
+  type: finalDbConfig.type,
+  host: finalDbConfig.host,
+  port: finalDbConfig.port,
+  username: finalDbConfig.username,
+  password: finalDbConfig.password,
+  database: finalDbConfig.database,
+  env: process.env.NODE_ENV ?? 'development',
+});
 
 export const dataSource = new DataSource({
-  type: dbConfig.type,
-  host: dbConfig.host,
-  port: dbConfig.port,
-  username: dbConfig.username,
-  password: dbConfig.password,
-  database: dbConfig.database,
+  type: finalDbConfig.type ?? 'postgres',
+  host: finalDbConfig.host,
+  port: finalDbConfig.port,
+  username: finalDbConfig.username,
+  password: finalDbConfig.password,
+  database: finalDbConfig.database,
   entities: [__dirname + '/../**/*.entity.{js,ts}'],
-  synchronize: dbConfig.synchronize,
+  synchronize: finalDbConfig.synchronize,
   cache: false,
   namingStrategy: new SnakeNamingStrategy(),
   subscribers: [UserSubscriber],

@@ -18,7 +18,11 @@ import {
   UploadedFiles,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+  FilesInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { PageMetaDto, PageOptionsDto } from 'src/common/dtos';
 import { RoleType } from 'src/constants';
 import { Auth } from 'src/decorators';
@@ -34,7 +38,12 @@ import { ClientResponseDto } from './dto/client-response.dto';
 import { ClientsResponseDto } from './dto/clients-response.dto';
 import { RunCommandDto } from './dto/run-command.dto';
 import { ClientService } from './client.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { UserEntity } from '../user/user.entity';
 import { GeneratorProvider } from 'src/providers/generator.provider';
 
@@ -42,18 +51,26 @@ import { GeneratorProvider } from 'src/providers/generator.provider';
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/clients')
 export class ClientController {
-  constructor(private readonly clientService: ClientService) { }
+  constructor(private readonly clientService: ClientService) {}
 
   /**
    * Bulk transfer clients to another center (and optionally group).
    * Loan officers can only transfer their own clients; branch managers and IT can transfer any clients.
    * Only clients with no active or pending loans can be transferred.
    */
-  @Auth([RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER, RoleType.IT, RoleType.SUPER_USER])
+  @Auth([
+    RoleType.LOAN_OFFICER,
+    RoleType.BRANCH_MANAGER,
+    RoleType.IT,
+    RoleType.SUPER_USER,
+  ])
   @Post('bulk-transfer-center')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Bulk transfer clients to another center' })
-  @ApiResponse({ status: 200, description: 'Clients transferred successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clients transferred successfully.',
+  })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   async bulkTransferClientsToCenter(
@@ -61,22 +78,26 @@ export class ClientController {
     @Req() req: any,
   ) {
     const user: UserEntity = req.user;
-    return await this.clientService.bulkTransferClientsToCenter(user, bulkClientCenterTransferDto);
+    return await this.clientService.bulkTransferClientsToCenter(
+      user,
+      bulkClientCenterTransferDto,
+    );
   }
-  
+
   @Auth([RoleType.LOAN_OFFICER])
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'proofOfAddress', maxCount: 1 },
       { name: 'nationalId', maxCount: 1 },
-    ])
+    ]),
   )
   @HttpCode(HttpStatus.CREATED)
   @Post()
   @ApiOperation({ summary: 'Create a new client with optional file uploads' })
   @ApiResponse({ status: 201, description: 'Client created successfully.' })
   async create(
-    @UploadedFiles() files: {
+    @UploadedFiles()
+    files: {
       proofOfAddress?: Express.Multer.File[];
       nationalId?: Express.Multer.File[];
     },
@@ -88,16 +109,27 @@ export class ClientController {
     console.log('FILES proofOfAddress: ', files?.proofOfAddress);
     console.log('FILES nationalId: ', files?.nationalId);
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'application/pdf',
+    ];
 
     // Handle proof of address upload if provided
     if (files?.proofOfAddress && files.proofOfAddress[0]) {
       const proofFile = files.proofOfAddress[0];
-      console.log('Processing proofOfAddress file:', proofFile.originalname, proofFile.mimetype);
-      
+      console.log(
+        'Processing proofOfAddress file:',
+        proofFile.originalname,
+        proofFile.mimetype,
+      );
+
       if (!allowedTypes.includes(proofFile.mimetype)) {
         throw new BadRequestException(
-          `Invalid proof of address file type. Allowed types: ${allowedTypes.join(', ')}`
+          `Invalid proof of address file type. Allowed types: ${allowedTypes.join(
+            ', ',
+          )}`,
         );
       }
 
@@ -105,7 +137,7 @@ export class ClientController {
         proofFile,
         'client-documents/proof-of-address',
       );
-      
+
       console.log('proofOfAddress upload successful:', proofUpload.Location);
       createClientDto.proofOfAddress = proofUpload.Location;
     }
@@ -113,11 +145,17 @@ export class ClientController {
     // Handle national ID upload if provided
     if (files?.nationalId && files.nationalId[0]) {
       const idFile = files.nationalId[0];
-      console.log('Processing nationalId file:', idFile.originalname, idFile.mimetype);
-      
+      console.log(
+        'Processing nationalId file:',
+        idFile.originalname,
+        idFile.mimetype,
+      );
+
       if (!allowedTypes.includes(idFile.mimetype)) {
         throw new BadRequestException(
-          `Invalid national ID file type. Allowed types: ${allowedTypes.join(', ')}`
+          `Invalid national ID file type. Allowed types: ${allowedTypes.join(
+            ', ',
+          )}`,
         );
       }
 
@@ -125,7 +163,7 @@ export class ClientController {
         idFile,
         'client-documents/national-id',
       );
-      
+
       console.log('nationalId upload successful:', idUpload.Location);
       createClientDto.nationalId = idUpload.Location;
     }
@@ -164,7 +202,6 @@ export class ClientController {
     return response;
   }
 
-
   @Auth([RoleType.SUPER_USER, RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER])
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Transfer a client to another group' })
@@ -179,9 +216,13 @@ export class ClientController {
     @Req() req: any, // or proper type for request
   ) {
     const user: UserEntity = req.user; // injected by JWT guard
-    return await this.clientService.transferToGroup(user, clientId, newGroupId, auditData);
+    return await this.clientService.transferToGroup(
+      user,
+      clientId,
+      newGroupId,
+      auditData,
+    );
   }
-
 
   @Auth()
   @Get('active')
@@ -226,7 +267,9 @@ export class ClientController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Find all soft deleted clients (paginated)' })
   @ApiResponse({ status: 200, description: 'List of soft deleted clients.' })
-  async findDeleted(@Query() pageOptionsDto: PageOptionsDto): Promise<ClientsResponseDto> {
+  async findDeleted(
+    @Query() pageOptionsDto: PageOptionsDto,
+  ): Promise<ClientsResponseDto> {
     const { data, meta } = await this.clientService.findDeleted(pageOptionsDto);
     const clientDtos = data.map((client) => new ClientDto(client));
     const response = new ClientsResponseDto();
@@ -419,12 +462,12 @@ export class ClientController {
     return response;
   }
 
-@Auth([RoleType.SUPER_USER, RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER])
+  @Auth([RoleType.SUPER_USER, RoleType.LOAN_OFFICER, RoleType.BRANCH_MANAGER])
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'proofOfAddress', maxCount: 1 },
       { name: 'nationalId', maxCount: 1 },
-    ])
+    ]),
   )
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
@@ -434,7 +477,8 @@ export class ClientController {
   @ApiResponse({ status: 404, description: 'Client not found.' })
   async update(
     @Param('id') id: string,
-    @UploadedFiles() files: {
+    @UploadedFiles()
+    files: {
       proofOfAddress?: Express.Multer.File[];
       nationalId?: Express.Multer.File[];
     },
@@ -446,16 +490,27 @@ export class ClientController {
     console.log('UPDATE FILES proofOfAddress: ', files?.proofOfAddress);
     console.log('UPDATE FILES nationalId: ', files?.nationalId);
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'application/pdf',
+    ];
 
     // Handle proof of address upload if provided
     if (files?.proofOfAddress && files.proofOfAddress[0]) {
       const proofFile = files.proofOfAddress[0];
-      console.log('Processing update proofOfAddress file:', proofFile.originalname, proofFile.mimetype);
-      
+      console.log(
+        'Processing update proofOfAddress file:',
+        proofFile.originalname,
+        proofFile.mimetype,
+      );
+
       if (!allowedTypes.includes(proofFile.mimetype)) {
         throw new BadRequestException(
-          `Invalid proof of address file type. Allowed types: ${allowedTypes.join(', ')}`
+          `Invalid proof of address file type. Allowed types: ${allowedTypes.join(
+            ', ',
+          )}`,
         );
       }
 
@@ -463,19 +518,28 @@ export class ClientController {
         proofFile,
         'client-documents/proof-of-address',
       );
-      
-      console.log('Update proofOfAddress upload successful:', proofUpload.Location);
+
+      console.log(
+        'Update proofOfAddress upload successful:',
+        proofUpload.Location,
+      );
       updateClientDto.proofOfAddress = proofUpload.Location;
     }
 
     // Handle national ID upload if provided
     if (files?.nationalId && files.nationalId[0]) {
       const idFile = files.nationalId[0];
-      console.log('Processing update nationalId file:', idFile.originalname, idFile.mimetype);
-      
+      console.log(
+        'Processing update nationalId file:',
+        idFile.originalname,
+        idFile.mimetype,
+      );
+
       if (!allowedTypes.includes(idFile.mimetype)) {
         throw new BadRequestException(
-          `Invalid national ID file type. Allowed types: ${allowedTypes.join(', ')}`
+          `Invalid national ID file type. Allowed types: ${allowedTypes.join(
+            ', ',
+          )}`,
         );
       }
 
@@ -483,7 +547,7 @@ export class ClientController {
         idFile,
         'client-documents/national-id',
       );
-      
+
       console.log('Update nationalId upload successful:', idUpload.Location);
       updateClientDto.nationalId = idUpload.Location;
     }
@@ -598,10 +662,17 @@ export class ClientController {
   @Delete(':id/soft')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete a client by ID' })
-  @ApiResponse({ status: 200, description: 'Client soft deleted successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Client soft deleted successfully.',
+  })
   async softDelete(@Param('id') id: string): Promise<ClientResponseDto> {
     await this.clientService.softDelete(id);
-    return ClientResponseDto.from(null, true, 'Client soft deleted successfully');
+    return ClientResponseDto.from(
+      null,
+      true,
+      'Client soft deleted successfully',
+    );
   }
 
   @Auth([RoleType.SUPER_USER])

@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as config from 'config';
+import * as fs from 'fs';
 
 export function setupSwagger(app: INestApplication): void {
   const serverConfig = config.get('server');
@@ -66,7 +67,6 @@ Routes is following REST standard (Richardson level 3)
   });
 
   // Write the OpenAPI spec to a file
-  const fs = require('fs');
   fs.writeFileSync('./swagger-spec.json', JSON.stringify(document));
 
   console.info(`Documentation: http://localhost:${port}/documentation`);

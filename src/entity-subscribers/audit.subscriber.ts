@@ -124,14 +124,16 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
       // Get entity metadata
       const auditableType = this.getAuditableType(entity);
-      this.logger.debug('auditableType: ', auditableType)
+      this.logger.debug('auditableType: ', auditableType);
       const idField = this.getEntityIdField(entity);
       const auditableId = idField ? entity[idField] : null;
 
       // Debug logging in development only
       if (process.env.NODE_ENV === 'development') {
         this.logger.debug(
-          `Audit context for ${auditableType}:${auditableId} - UserId: ${context?.userId || 'NULL'}, HasContext: ${!!context}`,
+          `Audit context for ${auditableType}:${auditableId} - UserId: ${
+            context?.userId || 'NULL'
+          }, HasContext: ${!!context}`,
         );
       }
 
@@ -143,7 +145,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
       }
 
       if (!auditableId) {
-        this.logger.warn(`Cannot audit entity ${auditableType} without ID field`);
+        this.logger.warn(
+          `Cannot audit entity ${auditableType} without ID field`,
+        );
         return;
       }
 
@@ -154,7 +158,11 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         event: eventType,
         status: AuditStatus.SUCCESS,
         oldValues: oldValues || null,
-        newValues: newValues || (eventType === 'created' ? this.cleanSensitiveData({ ...entity }) : null),
+        newValues:
+          newValues ||
+          (eventType === 'created'
+            ? this.cleanSensitiveData({ ...entity })
+            : null),
         userId: context?.userId || null,
         url: context?.url || null,
         ipAddress: context?.ipAddress || null,
@@ -202,8 +210,6 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     }
   }
 
-
-
   private getEntityIdField(entity: any): string | null {
     // Try to get primary key from metadata first
     try {
@@ -212,7 +218,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         return metadata.primaryColumns[0].propertyName;
       }
     } catch (error) {
-      this.logger.debug(`Could not get metadata for ${entity.constructor.name}`);
+      this.logger.debug(
+        `Could not get metadata for ${entity.constructor.name}`,
+      );
     }
 
     // Try common ID field names as fallback
@@ -222,15 +230,15 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         return field;
       }
     }
-    
+
     return null; // Return null if no ID field found
   }
 
   private shouldAuditEntity(entity: any): boolean {
     if (!entity) return false;
-    
+
     const entityName = entity.constructor.name;
-    
+
     // Skip auditing for certain entities
     const skipEntities = [
       'Audit',
@@ -239,11 +247,13 @@ export class AuditSubscriber implements EntitySubscriberInterface {
       'Session',
       'QueryRunner',
     ];
-    
+
     return !skipEntities.includes(entityName);
   }
 
-  private cleanSensitiveData(data?: Record<string, any>): Record<string, any> | undefined {
+  private cleanSensitiveData(
+    data?: Record<string, any>,
+  ): Record<string, any> | undefined {
     if (!data) return data;
 
     const sensitiveFields = [

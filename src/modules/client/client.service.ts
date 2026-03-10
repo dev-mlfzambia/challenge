@@ -45,7 +45,7 @@ export class ClientService {
     private centerService: CenterService,
     private languageService: LanguageService,
     private provinceService: ProvincesService,
-  ) { }
+  ) {}
 
   async create(
     createClientDto: CreateClientDto,
@@ -141,9 +141,9 @@ export class ClientService {
     return [itemCount, data];
   }
 
-
-
-  async findOneWithCenterAndMeetingDates(id: string): Promise<ClientEntity | null> {
+  async findOneWithCenterAndMeetingDates(
+    id: string,
+  ): Promise<ClientEntity | null> {
     return await this.clientRepository.findOne({
       where: { id },
       relations: ['center', 'center.meetingDates'],
@@ -151,27 +151,39 @@ export class ClientService {
   }
 
   /**
-  * Bulk transfer clients to another center (and optionally group).
-  * Loan officers can only transfer their own clients; branch managers and IT can transfer any clients.
-  * Only clients with no active or pending loans can be transferred.
-  */
-  async bulkTransferClientsToCenter(user: UserEntity, dto: BulkClientCenterTransferDto) {
+   * Bulk transfer clients to another center (and optionally group).
+   * Loan officers can only transfer their own clients; branch managers and IT can transfer any clients.
+   * Only clients with no active or pending loans can be transferred.
+   */
+  async bulkTransferClientsToCenter(
+    user: UserEntity,
+    dto: BulkClientCenterTransferDto,
+  ) {
     const { clientIds, targetCenterId, targetGroupId, reason } = dto;
     return await this.clientRepository.manager.transaction(async (manager) => {
       // Fetch target center
-      const targetCenter = await manager.findOne(Center, { where: { id: targetCenterId } });
+      const targetCenter = await manager.findOne(Center, {
+        where: { id: targetCenterId },
+      });
       if (!targetCenter) throw new NotFoundException('Target center not found');
 
       // If group specified, check it belongs to the target center
       let targetGroup = null;
       if (targetGroupId) {
-        targetGroup = await manager.findOne(GroupEntity, { where: { id: targetGroupId }, relations: ['center'] });
+        targetGroup = await manager.findOne(GroupEntity, {
+          where: { id: targetGroupId },
+          relations: ['center'],
+        });
         if (!targetGroup) throw new NotFoundException('Target group not found');
-        if (targetGroup.center.id !== targetCenterId) throw new BadRequestException('Target group does not belong to the target center');
+        if (targetGroup.center.id !== targetCenterId)
+          throw new BadRequestException(
+            'Target group does not belong to the target center',
+          );
       }
 
       // Fetch all clients using query builder, selecting only needed fields from relations
-      const clients = await manager.createQueryBuilder(ClientEntity, 'client')
+      const clients = await manager
+        .createQueryBuilder(ClientEntity, 'client')
         .leftJoin('client.center', 'center')
         .addSelect(['center.id', 'center.name'])
         .leftJoin('client.group', 'group')
@@ -179,17 +191,25 @@ export class ClientService {
         .leftJoin('client.loans', 'loans')
         .addSelect(['loans.id', 'loans.status'])
         .leftJoin('loans.schedule', 'schedule')
-        .addSelect(['schedule.id', 'schedule.installmentNumber', 'schedule.status'])
+        .addSelect([
+          'schedule.id',
+          'schedule.installmentNumber',
+          'schedule.status',
+        ])
         .leftJoin('client.staff', 'staff')
         .addSelect(['staff.id'])
         .where('client.id IN (:...clientIds)', { clientIds })
         .getMany();
-      if (clients.length !== clientIds.length) throw new NotFoundException('One or more clients not found');
+      if (clients.length !== clientIds.length)
+        throw new NotFoundException('One or more clients not found');
 
       // Role-based access: loan officers can only transfer their own clients
       if (user.role === RoleType.LOAN_OFFICER) {
-        const unauthorized = clients.filter(c => c.staffId !== user.id);
-        if (unauthorized.length > 0) throw new BadRequestException('Loan officers can only transfer their own clients');
+        const unauthorized = clients.filter((c) => c.staffId !== user.id);
+        if (unauthorized.length > 0)
+          throw new BadRequestException(
+            'Loan officers can only transfer their own clients',
+          );
       }
 
       // Branch managers, IT, super users can transfer any clients
@@ -206,19 +226,23 @@ export class ClientService {
 
         // Loan checks (Active or Pending)
         if (client.loans && client.loans.length > 0) {
-          const activeOrPendingLoans = client.loans.filter(loan =>
-            ['Active', 'Pending'].includes(loan.status)
+          const activeOrPendingLoans = client.loans.filter((loan) =>
+            ['Active', 'Pending'].includes(loan.status),
           );
 
           if (activeOrPendingLoans.length > 0) {
-
             // Check 3rd repayment schedule for each loan
-            const unpaidThirdRepayments = activeOrPendingLoans.filter(loan => {
-              if (!loan.schedule || !Array.isArray(loan.schedule)) return true;
-              const third = loan.schedule.find(s => s.installmentNumber === 3);
-              console.log('loan',loan);
-              return !(third && third.status === 'Paid');
-            });
+            const unpaidThirdRepayments = activeOrPendingLoans.filter(
+              (loan) => {
+                if (!loan.schedule || !Array.isArray(loan.schedule))
+                  return true;
+                const third = loan.schedule.find(
+                  (s) => s.installmentNumber === 3,
+                );
+                console.log('loan', loan);
+                return !(third && third.status === 'Paid');
+              },
+            );
 
             if (unpaidThirdRepayments.length > 0) {
               errors.push({
@@ -265,10 +289,17 @@ export class ClientService {
         } else {
           client.group = null;
         }
-        client.auditData = { ...client.auditData, lastCenterTransfer: transferAudit };
+        client.auditData = {
+          ...client.auditData,
+          lastCenterTransfer: transferAudit,
+        };
       }
       await manager.save(clients);
-      return { success: true, message: 'Clients transferred successfully', count: clients.length };
+      return {
+        success: true,
+        message: 'Clients transferred successfully',
+        count: clients.length,
+      };
     });
   }
 
@@ -296,8 +327,6 @@ export class ClientService {
     return client;
   }
 
-
-
   async findByNationalId(
     nationalIdNumber: string,
   ): Promise<ClientEntity | null> {
@@ -321,7 +350,9 @@ export class ClientService {
     });
   }
 
-  async findByBankAccountNumber(bankAccountNumber: string): Promise<ClientEntity | null> {
+  async findByBankAccountNumber(
+    bankAccountNumber: string,
+  ): Promise<ClientEntity | null> {
     return await this.clientRepository.findOne({
       where: { bankAccountNumber },
       relations: ['staff', 'office', 'center', 'group', 'bank', 'status'],
@@ -332,20 +363,29 @@ export class ClientService {
     user: UserEntity,
     clientId: string,
     newGroupId: string,
-    auditData: Partial<{ reason: string }> = {}
+    auditData: Partial<{ reason: string }> = {},
   ): Promise<ClientResponseDto> {
-
     // Fetch client with center, group, and loans
     const client = await this.clientRepository
       .createQueryBuilder('client')
-      .select(['client.id', 'client.firstName', 'client.lastName', 'client.blacklisted', 'client.status'])
+      .select([
+        'client.id',
+        'client.firstName',
+        'client.lastName',
+        'client.blacklisted',
+        'client.status',
+      ])
       .leftJoin('client.center', 'center')
       .addSelect(['center.id', 'center.name'])
       .leftJoinAndSelect('client.group', 'group')
       .addSelect(['group.id', 'group.name'])
       .leftJoinAndSelect('client.loans', 'loans')
       .leftJoin('loans.schedule', 'schedule')
-      .addSelect(['schedule.id', 'schedule.installmentNumber', 'schedule.status'])
+      .addSelect([
+        'schedule.id',
+        'schedule.installmentNumber',
+        'schedule.status',
+      ])
       .addSelect(['loans.id', 'loans.status'])
       .where('client.id = :clientId', { clientId })
       .getOne();
@@ -357,16 +397,22 @@ export class ClientService {
     // Check for Active or Pending loans
     if (client.loans && client.loans.length > 0) {
       // Filter active or pending loans
-      const activeOrPendingLoans = client.loans.filter(loan => ['Active', 'Pending'].includes(loan.status));
+      const activeOrPendingLoans = client.loans.filter((loan) =>
+        ['Active', 'Pending'].includes(loan.status),
+      );
       if (activeOrPendingLoans.length > 0) {
         // For each such loan, check if the third repayment schedule has status 'Paid'
-        const notPaidThirdRepayment = activeOrPendingLoans.filter(loan => {
+        const notPaidThirdRepayment = activeOrPendingLoans.filter((loan) => {
           if (!loan.schedule || !Array.isArray(loan.schedule)) return true;
-          const thirdSchedule = loan.schedule.find(sch => sch.installmentNumber === 3);
+          const thirdSchedule = loan.schedule.find(
+            (sch) => sch.installmentNumber === 3,
+          );
           return !(thirdSchedule && thirdSchedule.status === 'Paid');
         });
         if (notPaidThirdRepayment.length > 0) {
-          throw new BadRequestException('Client cannot be transferred: one or more active/pending loans have not paid the third repayment.');
+          throw new BadRequestException(
+            'Client cannot be transferred: one or more active/pending loans have not paid the third repayment.',
+          );
         }
         // If all active/pending loans have paid the third repayment, allow transfer
       }
@@ -384,7 +430,9 @@ export class ClientService {
 
     // Same center check
     if (client.center.id !== newGroup.center.id) {
-      throw new BadRequestException('The new group must be under the same center as the client');
+      throw new BadRequestException(
+        'The new group must be under the same center as the client',
+      );
     }
 
     // Blacklist check
@@ -428,10 +476,9 @@ export class ClientService {
     return ClientResponseDto.from(
       new ClientDto(updatedClient),
       true,
-      'Client transferred successfully'
+      'Client transferred successfully',
     );
   }
-
 
   async update(
     id: string,
@@ -452,7 +499,7 @@ export class ClientService {
     // Handle center update if centerId is provided
     if (updateClientDto.centerId) {
       const center = await this.centerRepository.findOne({
-        where: { id: updateClientDto.centerId }
+        where: { id: updateClientDto.centerId },
       });
       if (!center) {
         throw new NotFoundException('Center not found');
@@ -464,7 +511,7 @@ export class ClientService {
     // Handle language update if languageId is provided
     if (updateClientDto.languageId) {
       const language = await this.languageRepository.findOne({
-        where: { id: updateClientDto.languageId }
+        where: { id: updateClientDto.languageId },
       });
       if (!language) {
         throw new NotFoundException('Language not found');
@@ -476,7 +523,7 @@ export class ClientService {
     // Handle province update if provinceId is provided
     if (updateClientDto.provinceId) {
       const province = await this.provinceRepository.findOne({
-        where: { id: updateClientDto.provinceId }
+        where: { id: updateClientDto.provinceId },
       });
       if (!province) {
         throw new NotFoundException('Province not found');
@@ -498,33 +545,49 @@ export class ClientService {
 
     // Validate National ID Number
     if (updateClientDto.nationalIdNumber) {
-      const existingClient = await this.findByNationalId(updateClientDto.nationalIdNumber);
+      const existingClient = await this.findByNationalId(
+        updateClientDto.nationalIdNumber,
+      );
       if (existingClient && existingClient.id !== clientId) {
-        errors.push('National ID number already exists. Please use a different value.');
+        errors.push(
+          'National ID number already exists. Please use a different value.',
+        );
       }
     }
 
     // Validate Mobile Number
     if (updateClientDto.mobileNumber) {
-      const existingClient = await this.findByMobileNumber(updateClientDto.mobileNumber);
+      const existingClient = await this.findByMobileNumber(
+        updateClientDto.mobileNumber,
+      );
       if (existingClient && existingClient.id !== clientId) {
-        errors.push('Mobile number already exists. Please use a different value.');
+        errors.push(
+          'Mobile number already exists. Please use a different value.',
+        );
       }
     }
 
     // Validate Email Address
     if (updateClientDto.emailAddress) {
-      const existingClient = await this.findByEmail(updateClientDto.emailAddress);
+      const existingClient = await this.findByEmail(
+        updateClientDto.emailAddress,
+      );
       if (existingClient && existingClient.id !== clientId) {
-        errors.push('Email address already exists. Please use a different value.');
+        errors.push(
+          'Email address already exists. Please use a different value.',
+        );
       }
     }
 
     // Validate Bank Account Number
     if (updateClientDto.bankAccountNumber) {
-      const existingClient = await this.findByBankAccountNumber(updateClientDto.bankAccountNumber);
+      const existingClient = await this.findByBankAccountNumber(
+        updateClientDto.bankAccountNumber,
+      );
       if (existingClient && existingClient.id !== clientId) {
-        errors.push('Bank account number already exists. Please use a different value.');
+        errors.push(
+          'Bank account number already exists. Please use a different value.',
+        );
       }
     }
 
@@ -578,7 +641,6 @@ export class ClientService {
     await this.clientRepository.remove(client);
   }
 
-
   async softDelete(id: string): Promise<void> {
     await this.clientRepository.softDelete(id);
   }
@@ -587,8 +649,11 @@ export class ClientService {
     await this.clientRepository.restore(id);
   }
 
-  async findDeleted(pageOptionsDto: PageOptionsDto): Promise<{ data: ClientEntity[]; meta: PageMetaDto }> {
-    const queryBuilder = this.clientRepository.createQueryBuilder('client')
+  async findDeleted(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<{ data: ClientEntity[]; meta: PageMetaDto }> {
+    const queryBuilder = this.clientRepository
+      .createQueryBuilder('client')
       .withDeleted()
       .where('client.deletedAt IS NOT NULL')
       .orderBy('client.createdAt', pageOptionsDto.order)

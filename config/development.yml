@@ -2,7 +2,7 @@ server:
   port: 9000
 db:
   username: postgres
-  password: pass104
+  # password: set via DB_PASSWORD in .env (do not hardcode)
   host: localhost
   synchronize: false
   port: 5432

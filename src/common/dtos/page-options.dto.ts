@@ -10,7 +10,9 @@ export class PageOptionsDto {
   @IsOptional()
   readonly order?: Order = Order.ASC;
 
-  @ApiPropertyOptional({ description: 'Filter by status (e.g., active, pending)' })
+  @ApiPropertyOptional({
+    description: 'Filter by status (e.g., active, pending)',
+  })
   @IsString()
   @IsOptional()
   readonly status?: string;
@@ -24,7 +26,6 @@ export class PageOptionsDto {
   @IsString()
   @IsOptional()
   readonly userId?: string;
-
 
   @ApiPropertyOptional({ enum: RoleType, description: 'Filter users by role' })
   @IsEnum(RoleType)

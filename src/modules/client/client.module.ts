@@ -16,13 +16,19 @@ import { Province } from '../provinces/entities/province.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClientEntity, GroupEntity, Center, Language, Province]),
+    TypeOrmModule.forFeature([
+      ClientEntity,
+      GroupEntity,
+      Center,
+      Language,
+      Province,
+    ]),
     StatusModule,
     BankModule,
     CenterModule,
     LanguageModule,
     ProvincesModule,
-    GroupModule
+    GroupModule,
   ],
   controllers: [ClientController],
   providers: [ClientService],

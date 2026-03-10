@@ -36,7 +36,7 @@ interface MyRequest extends Request {
 @ApiTags('Center')
 @Controller('api/v1/centers/')
 export class CenterController {
-  constructor(private readonly centerService: CenterService) { }
+  constructor(private readonly centerService: CenterService) {}
 
   @Post()
   @Auth([RoleType.BRANCH_MANAGER])
@@ -76,7 +76,9 @@ export class CenterController {
 
   @Auth([RoleType.BRANCH_MANAGER])
   @Get('deleted')
-  async findDeleted(@Query() pageOptionsDto: PageOptionsDto): Promise<MiniCenterDtoListResponseDto> {
+  async findDeleted(
+    @Query() pageOptionsDto: PageOptionsDto,
+  ): Promise<MiniCenterDtoListResponseDto> {
     const { data, meta } = await this.centerService.findDeleted(pageOptionsDto);
     const centers = data.map((center) => new MiniCenterDto(center));
     const response = MiniCenterDtoListResponseDto.from(centers, meta);
@@ -98,14 +100,25 @@ export class CenterController {
 
   @Post('transfer')
   // @Auth([RoleType.BRANCH_MANAGER])
-  @ApiOperation({ summary: 'Transfer a center from one loan officer to another' })
-  @ApiResponse({ status: 200, description: 'Center transferred successfully.', type: CenterDto })
+  @ApiOperation({
+    summary: 'Transfer a center from one loan officer to another',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Center transferred successfully.',
+    type: CenterDto,
+  })
   async transferCenter(
     @Body() transferCenterDto: TransferCenterDto,
-    @Req() req: Request
+    @Req() req: Request,
   ): Promise<CenterDto> {
     const { centerId, fromLoanOfficerId, toLoanOfficerId } = transferCenterDto;
-    return await this.centerService.transferCenter(centerId, fromLoanOfficerId, toLoanOfficerId, req?.user);
+    return await this.centerService.transferCenter(
+      centerId,
+      fromLoanOfficerId,
+      toLoanOfficerId,
+      req?.user,
+    );
   }
 
   @Auth([RoleType.BRANCH_MANAGER])

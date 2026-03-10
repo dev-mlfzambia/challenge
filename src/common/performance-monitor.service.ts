@@ -23,24 +23,30 @@ export class PerformanceMonitorService {
   startOperation(operation: string, metadata?: Record<string, any>): string {
     const operationId = `${operation}_${Date.now()}_${Math.random()}`;
     const startTime = Date.now();
-    
+
     // Reset query counter for this operation
     this.queryCounters.set(operationId, 0);
-    
-    console.log(`[PERFORMANCE] ${operation} started at ${new Date().toISOString()}`);
-    
+
+    console.log(
+      `[PERFORMANCE] ${operation} started at ${new Date().toISOString()}`,
+    );
+
     return operationId;
   }
 
-  endOperation(operationId: string, operation: string, metadata?: Record<string, any>): PerformanceMetrics {
+  endOperation(
+    operationId: string,
+    operation: string,
+    metadata?: Record<string, any>,
+  ): PerformanceMetrics {
     const endTime = Date.now();
     const queryCount = this.queryCounters.get(operationId) || 0;
     const memoryUsage = process.memoryUsage();
-    
+
     // Extract start time from operationId (hacky but works for our use case)
     const startTime = parseInt(operationId.split('_')[1]);
     const duration = endTime - startTime;
-    
+
     const metrics: PerformanceMetrics = {
       operation,
       startTime,
@@ -50,15 +56,23 @@ export class PerformanceMonitorService {
       memoryUsage,
       metadata,
     };
-    
+
     this.metrics.push(metrics);
-    
-    console.log(`[PERFORMANCE] ${operation} completed in ${duration}ms with ${queryCount} queries`);
-    console.log(`[PERFORMANCE] Memory usage: ${(memoryUsage.heapUsed / 1024 / 1024).toFixed(2)} MB heap`);
-    
+
+    console.log(
+      `[PERFORMANCE] ${operation} completed in ${duration}ms with ${queryCount} queries`,
+    );
+    console.log(
+      `[PERFORMANCE] Memory usage: ${(
+        memoryUsage.heapUsed /
+        1024 /
+        1024
+      ).toFixed(2)} MB heap`,
+    );
+
     // Clean up
     this.queryCounters.delete(operationId);
-    
+
     return metrics;
   }
 
@@ -69,7 +83,7 @@ export class PerformanceMonitorService {
 
   getMetrics(operation?: string): PerformanceMetrics[] {
     if (operation) {
-      return this.metrics.filter(m => m.operation === operation);
+      return this.metrics.filter((m) => m.operation === operation);
     }
     return this.metrics;
   }
@@ -82,7 +96,7 @@ export class PerformanceMonitorService {
     maxDuration: number;
   } {
     const operationMetrics = this.getMetrics(operation);
-    
+
     if (operationMetrics.length === 0) {
       return {
         averageDuration: 0,
@@ -93,12 +107,13 @@ export class PerformanceMonitorService {
       };
     }
 
-    const durations = operationMetrics.map(m => m.duration);
-    const queryCounts = operationMetrics.map(m => m.queryCount || 0);
-    
+    const durations = operationMetrics.map((m) => m.duration);
+    const queryCounts = operationMetrics.map((m) => m.queryCount || 0);
+
     return {
       averageDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
-      averageQueryCount: queryCounts.reduce((a, b) => a + b, 0) / queryCounts.length,
+      averageQueryCount:
+        queryCounts.reduce((a, b) => a + b, 0) / queryCounts.length,
       totalOperations: operationMetrics.length,
       minDuration: Math.min(...durations),
       maxDuration: Math.max(...durations),
@@ -117,14 +132,16 @@ export class PerformanceMonitorService {
     console.log(`  Average duration: ${summary.averageDuration.toFixed(2)}ms`);
     console.log(`  Min duration: ${summary.minDuration}ms`);
     console.log(`  Max duration: ${summary.maxDuration}ms`);
-    console.log(`  Average query count: ${summary.averageQueryCount.toFixed(2)}`);
+    console.log(
+      `  Average query count: ${summary.averageQueryCount.toFixed(2)}`,
+    );
   }
 
   // Target performance validation
   validatePerformanceTarget(
-    operation: string, 
-    targetDurationMs: number, 
-    targetMaxQueries: number
+    operation: string,
+    targetDurationMs: number,
+    targetMaxQueries: number,
   ): {
     passedDuration: boolean;
     passedQueryCount: boolean;
@@ -132,7 +149,7 @@ export class PerformanceMonitorService {
     actualQueryCount: number;
   } {
     const latest = this.getMetrics(operation).slice(-1)[0];
-    
+
     if (!latest) {
       throw new Error(`No metrics found for operation: ${operation}`);
     }
@@ -141,8 +158,16 @@ export class PerformanceMonitorService {
     const passedQueryCount = (latest.queryCount || 0) <= targetMaxQueries;
 
     console.log(`[PERFORMANCE VALIDATION] ${operation}:`);
-    console.log(`  Duration: ${latest.duration}ms (target: ≤${targetDurationMs}ms) - ${passedDuration ? 'PASS' : 'FAIL'}`);
-    console.log(`  Query count: ${latest.queryCount} (target: ≤${targetMaxQueries}) - ${passedQueryCount ? 'PASS' : 'FAIL'}`);
+    console.log(
+      `  Duration: ${latest.duration}ms (target: ≤${targetDurationMs}ms) - ${
+        passedDuration ? 'PASS' : 'FAIL'
+      }`,
+    );
+    console.log(
+      `  Query count: ${latest.queryCount} (target: ≤${targetMaxQueries}) - ${
+        passedQueryCount ? 'PASS' : 'FAIL'
+      }`,
+    );
 
     return {
       passedDuration,
