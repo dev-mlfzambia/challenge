@@ -5,9 +5,15 @@ import { UserSubscriber } from '../entity-subscribers';
 import { DataSource } from 'typeorm';
 
 const fileConfig = config.get<any>('db') || {};
+const rawHost = process.env.DB_HOST ?? fileConfig.host;
+// Avoid using environment name (e.g. "Development") as DB hostname
+const resolvedHost =
+  rawHost === 'Development' || rawHost === 'development'
+    ? 'localhost'
+    : rawHost;
 const finalDbConfig = {
   ...fileConfig,
-  host: process.env.DB_HOST ?? fileConfig.host,
+  host: resolvedHost,
   port: Number(process.env.DB_PORT ?? fileConfig.port),
   username: process.env.DB_USERNAME ?? fileConfig.username,
   password: process.env.DB_PASSWORD ?? fileConfig.password,

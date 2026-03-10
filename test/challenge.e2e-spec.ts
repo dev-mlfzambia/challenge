@@ -1,26 +1,26 @@
 /**
- * CHALLENGE README REQUIREMENTS CHECKLIST
- * =======================================
+ * CHALLENGE README REQUIREMENTS CHECKLIST (guide.md Task 1)
+ * =========================================================
  * Source: README.md "Known Issues" and expected behaviour.
  *
  * 1) Group endpoint missing officeName
  *    - Endpoint: GET /api/v1/groups/:id
- *    - Expected: Response includes officeName in group data.
- *    - Verified by: Unit test GroupService.findOne returns entity with officeName;
- *                   controller maps to GroupDto which includes officeName.
+ *    - Request: Authenticated GET with group id.
+ *    - Expected: 200, response includes officeName in group data.
+ *    - Implementation: GroupService.findOne selects group.officeName; GroupDto maps it.
  *
  * 2) Status filter ignored
  *    - Endpoint: GET /api/v1/groups?status=ACTIVE (query param)
  *    - Expected: Only groups with that status are returned.
- *    - Verified by: Unit test GroupService.getGroups applies status filter.
+ *    - Implementation: GroupService.getGroups andWhere LOWER(status.name) = LOWER(:status).
  *
  * 3) Build failure
- *    - Expected: Project compiles and runs (yarn start:dev / npm run start).
- *    - Verified by: npm run build succeeds; no missing/incorrect imports.
+ *    - Expected: Project compiles and runs (yarn start:dev / npm run start:dev).
+ *    - Implementation: Circular dependency (Client/Group) fixed; cross-env for NODE_ENV on Windows.
  *
  * 4) RBAC bypass
- *    - Expected: Protected endpoints require auth; users without permission cannot access.
- *    - Verified by: E2E unauthenticated requests to protected routes return 401.
+ *    - Expected: Protected endpoints require auth; unauthenticated requests get 401.
+ *    - Implementation: GroupController @UseGuards(AuthGuard(), RolesGuard); E2E asserts 401.
  *
  * DEMO CREDENTIALS (README): Username: training, Password: test@123
  *
@@ -86,12 +86,15 @@ describe('Challenge (e2e) – README requirements', () => {
 });
 
 /**
- * FINAL VERIFICATION TABLE
- * ------------------------
- * | Requirement                    | Implementation location              | Test that verifies it                    | Status   |
- * |--------------------------------|--------------------------------------|------------------------------------------|----------|
- * | 1. Group endpoint officeName   | GroupController findOne → GroupDto   | group.service.spec.ts findOne officeName | PASSED   |
- * | 2. Status filter on list       | GroupService.getGroups andWhere      | group.service.spec.ts getGroups status   | PASSED   |
- * | 3. Build / run                 | Fix controller brace; imports        | challenge.e2e-spec GET / 200             | PASSED   |
- * | 4. RBAC on protected endpoints | AuthGuard + RolesGuard on controller | challenge.e2e-spec 401 for groups routes | PASSED   |
+ * FINAL VERIFICATION TABLE (guide.md Task 5)
+ * ------------------------------------------
+ * | Requirement                    | Implementation location                    | Test that verifies it                    | Status   |
+ * |--------------------------------|--------------------------------------------|------------------------------------------|----------|
+ * | 1. Group endpoint officeName   | GroupService.findOne (group.officeName);   | group.service.spec.ts findOne officeName | PASSED   |
+ * |                                | GroupController findOne → GroupDto         |                                          |          |
+ * | 2. Status filter on list       | GroupService.getGroups filters.status      | group.service.spec.ts getGroups status    | PASSED   |
+ * |                                | andWhere LOWER(status.name)=LOWER(:status)  |                                          |          |
+ * | 3. Build / run                 | Circular dep (group entity); cross-env      | challenge.e2e-spec GET / 200; npm run build | PASSED |
+ * | 4. RBAC on protected endpoints | GroupController @UseGuards(AuthGuard,      | challenge.e2e-spec 401 for groups routes | PASSED   |
+ * |                                | RolesGuard)                                |                                          |          |
  */

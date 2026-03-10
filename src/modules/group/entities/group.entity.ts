@@ -9,7 +9,7 @@ import {
 import { AbstractEntity } from '../../../common/abstract.entity';
 import { UserEntity } from '../../user/user.entity';
 import { Center } from '../../center/entities/center.entity';
-import { ClientEntity } from '../../client/entities/client.entity';
+import type { ClientEntity } from '../../client/entities/client.entity';
 import { StatusEntity } from '../../status/entities/status.entity';
 import { LoanEntity } from 'src/modules/loan/entities/loan.entity';
 
@@ -27,12 +27,12 @@ export class GroupEntity extends AbstractEntity<GroupEntity> {
   @ManyToOne(() => StatusEntity, { nullable: false, eager: true })
   status: StatusEntity;
 
-  // One-to-many: group has many clients
-  @OneToMany(() => ClientEntity, (client) => client.group, { eager: true })
+  // One-to-many: group has many clients (string refs break Client<->Group circular import)
+  @OneToMany('ClientEntity', 'group', { eager: true })
   clients: ClientEntity[];
 
   // One-to-one: group leader
-  @OneToOne(() => ClientEntity, { nullable: false })
+  @OneToOne('ClientEntity', 'groupLed', { nullable: false })
   @JoinColumn({ name: 'group_leader_id' })
   groupLeader: ClientEntity;
 
