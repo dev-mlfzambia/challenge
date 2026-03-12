@@ -333,7 +333,16 @@ export class GroupService {
       }
     }
 
-    if (filters.searchTerm?.trim()) {
+    // Status filter
+    if (filters?.status?.trim()) {
+      const normalizedStatus = filters.status.trim();
+      queryBuilder.andWhere('status.name ILIKE :statusName', {
+        statusName: normalizedStatus,
+      });
+    }
+
+    // Search term filter
+    if (filters?.searchTerm?.trim()) {
       const term = filters.searchTerm.trim();
       queryBuilder.andWhere('"group"."name" ILIKE :search', {
         search: `%${term}%`,

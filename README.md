@@ -254,3 +254,80 @@ Users without the required permissions should **not be able to access restricted
 MIT License.
 
 ---
+
+## Candidate Implementation Notes
+
+This section documents the changes implemented to address the intentional issues described above, and how to run and verify the solution locally.
+
+### Implemented Fixes
+
+- **1. Group endpoint missing `officeName`**
+  - Updated the `GET /api/v1/groups/:id` endpoint to return a `GroupResponseDto` (wrapping `GroupDto`) instead of a raw entity.
+  - `GroupDto` already exposes `officeName`, so the group detail response now includes the correct `officeName` as part of the group data.
+
+- **2. Status filter ignored**
+  - `GroupFiltersDto` already defined an optional `status?: string` filter.
+  - Updated `GroupService.getGroups` to apply this filter by adding a `status.name ILIKE :statusName` condition when `filters.status` is provided.
+  - This ensures calls like `GET /api/v1/groups?status=ACTIVE` return only groups with the requested status, while preserving existing role and office scoping.
+
+- **3. Build failure (missing/incorrect import)**
+  - Added the missing `AppService` import in `app.controller.ts`, resolving TypeScript errors related to `AppService` being unknown.
+  - Imported `GroupResponseDto` into `group.controller.ts` and used it in the `GET /api/v1/groups/:id` handler.
+  - Fixed the `GroupController` class structure so all route handlers are defined inside the class.
+  - Verified that `yarn build` now completes successfully.
+
+- **4. RBAC bypass (authentication/authorization issue)**
+  - The `PATCH /api/v1/groups/:id/system-name` endpoint was documented as "Super User only" but allowed both `SUPER_USER` and `BRANCH_MANAGER`.
+  - Tightened the `@Auth` decorator to `@Auth([RoleType.SUPER_USER])` so only Super Users can update group system names.
+  - This aligns the effective RBAC with the documented behavior and removes the extra privilege previously granted to Branch Managers. Other protected endpoints continue to use the existing `Auth` decorator, `AuthGuard`, and `RolesGuard` stack.
+
+### Quickstart (Local Setup)
+
+- **Prerequisites**
+  - Node.js ≥ 18
+  - PostgreSQL running locally
+  - `core_banking.sql` file available in the project root
+
+- **Database**
+
+  ```bash
+  psql -h localhost -U postgres -c "CREATE DATABASE core_banking;"
+  psql -h localhost -U postgres -d core_banking < core_banking.sql
+  ```
+
+- **Install & Build**
+
+  ```bash
+  yarn install
+  yarn build
+  ```
+
+- **Run in Development**
+
+  On Unix-like shells (macOS/Linux/Git Bash/WSL):
+
+  ```bash
+  yarn start:dev
+  ```
+
+  > Note (Windows): the `NODE_ENV=development` syntax used in the `start:dev` script is POSIX-style. On pure Command Prompt/PowerShell, you may need to run via a POSIX-compatible shell (e.g., Git Bash/WSL) or adjust the script to use a cross-platform environment tool such as `cross-env`.
+
+### Verification Checklist
+
+- **Groups list with status filter**
+  - Call `GET /api/v1/groups?status=ACTIVE` with a user that has appropriate permissions.
+  - Confirm only groups with status `Active` are returned.
+
+- **Group by ID includes `officeName`**
+  - Call `GET /api/v1/groups/:id`.
+  - Confirm the response body includes `data.officeName` with the expected value.
+
+- **RBAC on system name update**
+  - Call `PATCH /api/v1/groups/:id/system-name`:
+    - As a `SUPER_USER` → request succeeds with valid input.
+    - As any other role (e.g., `BRANCH_MANAGER`) → request is rejected with `403 Forbidden`.
+
+- **Build**
+  - Run `yarn build` and confirm it completes without TypeScript errors.
+
+---

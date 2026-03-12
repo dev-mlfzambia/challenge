@@ -33,6 +33,7 @@ import {
 } from './dto/group.dto';
 import { PageMetaDto, PageOptionsDto } from 'src/common/dtos';
 import { GroupsResponseDto } from './dto/groups-response.dto';
+import { GroupResponseDto } from './dto/group-response.dto';
 import { UserEntity } from '../user/user.entity';
 import { GroupFiltersDto } from './dto/group-filters.dto';
 
@@ -136,11 +137,10 @@ export class GroupController {
   @ApiOperation({ summary: 'Get a group by ID' })
   @ApiResponse({ status: 200, description: 'Group found.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
- 
-  findOne(@Param('id') id: string, @Request() req) {
-    return this.groupService.findOne(id, req.user);
+  async findOne(@Param('id') id: string, @Request() req) {
+    const group = await this.groupService.findOne(id, req.user);
+    return new GroupResponseDto(group);
   }
-}
 
   @Patch(':id')
   @Auth([RoleType.LOAN_OFFICER])
@@ -183,38 +183,40 @@ export class GroupController {
   }
 
   @Patch(':id/system-name')
-  @Auth([RoleType.SUPER_USER,RoleType.BRANCH_MANAGER,])
+  @Auth([RoleType.SUPER_USER])
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update group system name (Super User only)',
-    description: 'Updates the system name of a group. The new name must start with the center code and be unique across all groups.'
+    description:
+      'Updates the system name of a group. The new name must start with the center code and be unique across all groups.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Group system name updated successfully.',
     type: UpdateGroupSystemNameResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Validation error - system name must start with center code or already exists.' 
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation error - system name must start with center code or already exists.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - only super users can update system names.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only super users can update system names.',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Group not found.' 
+  @ApiResponse({
+    status: 404,
+    description: 'Group not found.',
   })
   async updateSystemName(
     @Param('id') id: string,
     @Body() updateGroupSystemNameDto: UpdateGroupSystemNameDto,
-    @Request() req
+    @Request() req,
   ) {
-    return await this.groupService.updateSystemName(
-      id, 
-      updateGroupSystemNameDto, 
-      req.user
+    return this.groupService.updateSystemName(
+      id,
+      updateGroupSystemNameDto,
+      req.user,
     );
   }
 }
