@@ -136,11 +136,11 @@ export class GroupController {
   @ApiOperation({ summary: 'Get a group by ID' })
   @ApiResponse({ status: 200, description: 'Group found.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
- 
-  findOne(@Param('id') id: string, @Request() req) {
-    return this.groupService.findOne(id, req.user);
+
+  async findOne(@Param('id') id: string, @Request() req) {
+    const group = await this.groupService.findOne(id, req.user);
+    return new GroupDto(group);
   }
-}
 
   @Patch(':id')
   @Auth([RoleType.LOAN_OFFICER])
@@ -185,26 +185,26 @@ export class GroupController {
   @Patch(':id/system-name')
   @Auth([RoleType.SUPER_USER,RoleType.BRANCH_MANAGER,])
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update group system name (Super User only)',
     description: 'Updates the system name of a group. The new name must start with the center code and be unique across all groups.'
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Group system name updated successfully.',
     type: UpdateGroupSystemNameResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Validation error - system name must start with center code or already exists.' 
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error - system name must start with center code or already exists.'
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - only super users can update system names.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only super users can update system names.'
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Group not found.' 
+  @ApiResponse({
+    status: 404,
+    description: 'Group not found.'
   })
   async updateSystemName(
     @Param('id') id: string,
@@ -212,8 +212,8 @@ export class GroupController {
     @Request() req
   ) {
     return await this.groupService.updateSystemName(
-      id, 
-      updateGroupSystemNameDto, 
+      id,
+      updateGroupSystemNameDto,
       req.user
     );
   }

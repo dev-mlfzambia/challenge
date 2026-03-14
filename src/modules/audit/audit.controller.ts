@@ -72,6 +72,7 @@ export class AuditController {
   // }
 
   @Get('user/:userId')
+  @AuditRoles(RoleType.SUPER_USER, RoleType.IT, RoleType.REGIONAL_MANAGER, RoleType.BRANCH_MANAGER)
   @ApiOperation({ summary: 'Get user activity audit trail' })
   @ApiResponse({
     status: 200,
@@ -101,8 +102,6 @@ export class AuditController {
   //   return this.auditService.getAuditStatistics(start, end);
   // }
 
-  
-
   // @Get('export')
   // @ApiOperation({ summary: 'Export audit data' })
   // @ApiResponse({
@@ -113,6 +112,4 @@ export class AuditController {
   // async exportAuditData(@Query() options: AuditQueryOptions): Promise<Audit[]> {
   //   return this.auditService.exportAuditData(options);
   // }
-
-  
 }

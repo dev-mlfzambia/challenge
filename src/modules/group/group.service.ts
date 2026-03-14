@@ -225,9 +225,8 @@ export class GroupService {
       });
       if (!center) throw new NotFoundException('Center not found');
       center.user = user.id;
-      center.staffName = `${user.firstName || ''} ${
-        user.lastName || ''
-      }`.trim();
+      center.staffName = `${user.firstName || ''} ${user.lastName || ''
+        }`.trim();
       await centerRepo.save(center);
       // Generate systemName: {centerCode}{N}, where N = number of groups the center has + 1
       const systemName = await this.generateSystemNameForCenter(
@@ -338,9 +337,10 @@ export class GroupService {
       queryBuilder.andWhere('"group"."name" ILIKE :search', {
         search: `%${term}%`,
       });
-      // If users might type % or _ and you want literal matching, use:
-      // const safe = term.replace(/[\\%_]/g, '\\$&');
-      // qb.andWhere(`grp.name ILIKE :search ESCAPE '\\'`, { search: `%${safe}%` });
+    }
+
+    if (filters.status) {
+      queryBuilder.andWhere('status.name = :status', { status: filters.status });
     }
 
     // Pagination
@@ -476,140 +476,135 @@ export class GroupService {
       throw new ForbiddenException('You can only access groups in your office');
     }
 
-       const groupWithLeaderId = {
-      ...group,
-      groupLeaderId: group.groupLeader?.id || null,
-    };
-
-    return groupWithLeaderId;
+    return group;
   }
 
- async update(
-  id: string,
-  updateGroupDto: UpdateGroupDto,
-  user: UserEntity,
-): Promise<GroupResponseDto> {
-  const group = await this.groupRepository.createQueryBuilder('group')
-    .leftJoinAndSelect('group.staff', 'staff')
-    .leftJoinAndSelect('staff.office', 'staffOffice')
-    .leftJoinAndSelect('group.clients', 'clients')
-    .leftJoinAndSelect('group.groupLeader', 'groupLeader')
-    .leftJoinAndSelect('group.createdBy', 'createdBy')
-    .leftJoinAndSelect('createdBy.office', 'createdByOffice')
-    .leftJoinAndSelect('group.center', 'center')
-    .leftJoinAndSelect('center.meetingDates', 'meetingDates')
-    .where('group.id = :id', { id })
-    .getOne();
+  async update(
+    id: string,
+    updateGroupDto: UpdateGroupDto,
+    user: UserEntity,
+  ): Promise<GroupResponseDto> {
+    const group = await this.groupRepository.createQueryBuilder('group')
+      .leftJoinAndSelect('group.staff', 'staff')
+      .leftJoinAndSelect('staff.office', 'staffOffice')
+      .leftJoinAndSelect('group.clients', 'clients')
+      .leftJoinAndSelect('group.groupLeader', 'groupLeader')
+      .leftJoinAndSelect('group.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.office', 'createdByOffice')
+      .leftJoinAndSelect('group.center', 'center')
+      .leftJoinAndSelect('center.meetingDates', 'meetingDates')
+      .where('group.id = :id', { id })
+      .getOne();
 
-  if (!group) throw new NotFoundException('Group not found');
-  if (user.role === 'loan_officer' && group.staff.id !== user.id) {
-    throw new ForbiddenException('You can only update your own groups');
-  }
-
-  // Update name
-  if (updateGroupDto.name) {
-    group.name = updateGroupDto.name;
-  }
-
-  // Remove clients (treat clientIds as "to remove")
-  if (updateGroupDto.clientIds && updateGroupDto.clientIds.length > 0) {
-    const clientsToRemove = await this.clientRepository.find({
-      where: { id: In(updateGroupDto.clientIds) },
-      relations: ['group'],
-    });
-
-    if (clientsToRemove.length !== updateGroupDto.clientIds.length) {
-      throw new NotFoundException('One or more clients not found');
+    if (!group) throw new NotFoundException('Group not found');
+    if (user.role === 'loan_officer' && group.staff.id !== user.id) {
+      throw new ForbiddenException('You can only update your own groups');
     }
 
-    // Ensure all clients actually belong to this group
-    for (const client of clientsToRemove) {
-      if (!client.group || client.group.id !== group.id) {
+    // Update name
+    if (updateGroupDto.name) {
+      group.name = updateGroupDto.name;
+    }
+
+    // Remove clients (treat clientIds as "to remove")
+    if (updateGroupDto.clientIds && updateGroupDto.clientIds.length > 0) {
+      const clientsToRemove = await this.clientRepository.find({
+        where: { id: In(updateGroupDto.clientIds) },
+        relations: ['group'],
+      });
+
+      if (clientsToRemove.length !== updateGroupDto.clientIds.length) {
+        throw new NotFoundException('One or more clients not found');
+      }
+
+      // Ensure all clients actually belong to this group
+      for (const client of clientsToRemove) {
+        if (!client.group || client.group.id !== group.id) {
+          throw new ForbiddenException(
+            `Client ${client.id} does not belong to this group`,
+          );
+        }
+      }
+
+      // Null out group reference for removed clients
+      for (const client of clientsToRemove) {
+        client.group = null;
+        await this.clientRepository.save(client);
+      }
+
+      // Remove from group's client list
+      group.clients = group.clients.filter(
+        (c) => !updateGroupDto.clientIds.includes(c.id),
+      );
+
+      group.timeline = this.addTimelineEvent(
+        group.timeline,
+        'clients_removed',
+        `Removed clients from group`,
+        user,
+        { removedClientIds: updateGroupDto.clientIds },
+      );
+    }
+
+    // Update group leader
+    if (updateGroupDto.groupLeaderId) {
+      const newLeader = await this.clientRepository.findOne({
+        where: { id: updateGroupDto.groupLeaderId },
+      });
+
+      if (!newLeader) {
+        throw new NotFoundException('New group leader client not found');
+      }
+
+      // Ensure not already leader of another group
+      const conflict = await this.groupRepository.findOne({
+        where: { groupLeader: { id: newLeader.id }, id: Not(id) },
+      });
+      if (conflict) {
         throw new ForbiddenException(
-          `Client ${client.id} does not belong to this group`,
+          'This client is already a group leader of another group',
         );
       }
-    }
 
-    // Null out group reference for removed clients
-    for (const client of clientsToRemove) {
-      client.group = null;
-      await this.clientRepository.save(client);
-    }
+      // Ensure leader is in current group
+      if (!group.clients.find((c) => c.id === newLeader.id)) {
+        throw new ForbiddenException(
+          'Group leader must be one of the group clients',
+        );
+      }
 
-    // Remove from group's client list
-    group.clients = group.clients.filter(
-      (c) => !updateGroupDto.clientIds.includes(c.id),
-    );
+      const previousLeader = group.groupLeader;
 
-    group.timeline = this.addTimelineEvent(
-      group.timeline,
-      'clients_removed',
-      `Removed clients from group`,
-      user,
-      { removedClientIds: updateGroupDto.clientIds },
-    );
-  }
+      // Clear old leader
+      if (previousLeader) {
+        previousLeader.groupLed = null;
+        await this.clientRepository.save(previousLeader);
+      }
 
-  // Update group leader
-  if (updateGroupDto.groupLeaderId) {
-    const newLeader = await this.clientRepository.findOne({
-      where: { id: updateGroupDto.groupLeaderId },
-    });
+      // Assign new leader
+      group.groupLeader = newLeader;
+      newLeader.groupLed = group;
+      await this.clientRepository.save(newLeader);
 
-    if (!newLeader) {
-      throw new NotFoundException('New group leader client not found');
-    }
-
-    // Ensure not already leader of another group
-    const conflict = await this.groupRepository.findOne({
-      where: { groupLeader: { id: newLeader.id }, id: Not(id) },
-    });
-    if (conflict) {
-      throw new ForbiddenException(
-        'This client is already a group leader of another group',
+      group.timeline = this.addTimelineEvent(
+        group.timeline,
+        'group_leader_changed',
+        `Group leader changed from "${previousLeader?.firstName} ${previousLeader?.lastName}" to "${newLeader.firstName} ${newLeader.lastName}"`,
+        user,
+        {
+          previousLeaderId: previousLeader?.id,
+          previousLeaderName: previousLeader
+            ? `${previousLeader.firstName} ${previousLeader.lastName}`
+            : 'None',
+          newLeaderId: newLeader.id,
+          newLeaderName: `${newLeader.firstName} ${newLeader.lastName}`,
+        },
       );
     }
 
-    // Ensure leader is in current group
-    if (!group.clients.find((c) => c.id === newLeader.id)) {
-      throw new ForbiddenException(
-        'Group leader must be one of the group clients',
-      );
-    }
-
-    const previousLeader = group.groupLeader;
-
-    // Clear old leader
-    if (previousLeader) {
-      previousLeader.groupLed = null;
-      await this.clientRepository.save(previousLeader);
-    }
-
-    // Assign new leader
-    group.groupLeader = newLeader;
-    newLeader.groupLed = group;
-    await this.clientRepository.save(newLeader);
-
-    group.timeline = this.addTimelineEvent(
-      group.timeline,
-      'group_leader_changed',
-      `Group leader changed from "${previousLeader?.firstName} ${previousLeader?.lastName}" to "${newLeader.firstName} ${newLeader.lastName}"`,
-      user,
-      {
-        previousLeaderId: previousLeader?.id,
-        previousLeaderName: previousLeader
-          ? `${previousLeader.firstName} ${previousLeader.lastName}`
-          : 'None',
-        newLeaderId: newLeader.id,
-        newLeaderName: `${newLeader.firstName} ${newLeader.lastName}`,
-      },
-    );
+    const savedGroup = await this.groupRepository.save(group);
+    return new GroupResponseDto(savedGroup);
   }
-
-  const savedGroup = await this.groupRepository.save(group);
-  return new GroupResponseDto(savedGroup);
-}
 
 
   async remove(id: string, user: UserEntity): Promise<void> {
@@ -649,7 +644,7 @@ export class GroupService {
     // Save the timeline update before deletion
     await this.groupRepository.save(group);
 
-  await this.groupRepository.softDelete(id);
+    await this.groupRepository.softDelete(id);
   }
 
   async activate(id: string, user: UserEntity): Promise<GroupEntity> {
@@ -761,7 +756,7 @@ export class GroupService {
 
     // Validate that system name follows the exact pattern: {centerCode}{Number}
     const systemNamePattern = new RegExp(`^${centerCode}\\d+$`);
-    
+
     if (!systemNamePattern.test(newSystemName)) {
       throw new BadRequestException(
         `System name must follow the pattern '${centerCode}[Number]' (e.g., ${centerCode}1, ${centerCode}2, etc.)`
@@ -771,7 +766,7 @@ export class GroupService {
     // Extract the number part to ensure it's valid
     const numberPart = newSystemName.substring(centerCode.length);
     const number = parseInt(numberPart, 10);
-    
+
     if (isNaN(number) || number <= 0 || numberPart !== number.toString()) {
       throw new BadRequestException(
         `System name must have a valid positive number after the center code '${centerCode}'`
@@ -801,8 +796,8 @@ export class GroupService {
    * @returns The updated group
    */
   async updateSystemName(
-    groupId: string, 
-    updateDto: UpdateGroupSystemNameDto, 
+    groupId: string,
+    updateDto: UpdateGroupSystemNameDto,
     user: UserEntity
   ): Promise<any> {
     // Additional authorization check (controller should already handle this)
@@ -837,7 +832,7 @@ export class GroupService {
     const group = await this.groupRepository.findOne({
       where: { id: groupId },
       relations: [
-        'center',     
+        'center',
       ],
     });
 
