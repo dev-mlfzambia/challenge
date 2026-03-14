@@ -1,5 +1,9 @@
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as _ from 'lodash';
 
@@ -12,12 +16,25 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const roles = this.reflector.get<RoleType[]>('roles', context.getHandler());
+
+    const request = context.switchToHttp().getRequest();
+    const user = <UserEntity>request.user;
+
+    //First check if user is authenticated
+    if (!user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    // If no roles are required, allow access
     if (_.isEmpty(roles)) {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const user = <UserEntity>request.user;
+    if (!roles.includes(user.role)) {
+      throw new ForbiddenException(
+        `Access denied. Required roles: ${roles.join(', ')}`,
+      );
+    }
 
     return roles.includes(user.role);
   }

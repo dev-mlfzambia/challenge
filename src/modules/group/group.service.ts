@@ -61,7 +61,9 @@ export class GroupService {
     if (!group) throw new NotFoundException('Group not found');
     // Only the staff assigned to the group can add clients
     if (user.role === 'loan_officer' && group.staff.id !== user.id) {
-      throw new ForbiddenException('You can only add clients to your own groups');
+      throw new ForbiddenException(
+        'You can only add clients to your own groups',
+      );
     }
     // Find all clients by IDs, including their group and center relation
     const clients = await this.clientRepository
@@ -75,44 +77,58 @@ export class GroupService {
     if (clients.length !== clientIds.length) {
       const foundIds = clients.map((c) => c.id);
       const notFound = clientIds.filter((id) => !foundIds.includes(id));
-      throw new NotFoundException(`Clients not found or not owned by user: ${notFound.join(', ')}`);
+      throw new NotFoundException(
+        `Clients not found or not owned by user: ${notFound.join(', ')}`,
+      );
     }
 
     // Check if any client is already in this group
-    const alreadyInGroup = clients.filter((c) => c.group && c.group.id === groupId);
+    const alreadyInGroup = clients.filter(
+      (c) => c.group && c.group.id === groupId,
+    );
     if (alreadyInGroup.length > 0) {
       throw new ForbiddenException(
-        `Clients already exist in this group: ${alreadyInGroup.map((c) => c.id).join(', ')}`,
+        `Clients already exist in this group: ${alreadyInGroup
+          .map((c) => c.id)
+          .join(', ')}`,
       );
     }
 
     // Check if each client belongs to the same center and office as the group and loan officer
     for (const client of clients) {
       // Logging for center check
-      console.log(`Validating client ${client.id}: client.center.id=${client.center?.id}, group.center.id=${group.center.id}`);
+      console.log(
+        `Validating client ${client.id}: client.center.id=${client.center?.id}, group.center.id=${group.center.id}`,
+      );
       if (!client.center || client.center.id !== group.center.id) {
         console.warn(`Client ${client.id} failed center check.`);
         throw new ForbiddenException(
-          `Client ${client.id} does not belong to the same center as the group.`
+          `Client ${client.id} does not belong to the same center as the group.`,
         );
       }
       // Logging for office check
       if (user.office && client.office) {
-        console.log(`Validating client ${client.id}: client.office.id=${client.office.id}, user.office.id=${user.office.id}`);
+        console.log(
+          `Validating client ${client.id}: client.office.id=${client.office.id}, user.office.id=${user.office.id}`,
+        );
         if (client.office.id !== user.office.id) {
           console.warn(`Client ${client.id} failed office check.`);
           throw new ForbiddenException(
-            `Client ${client.id} does not belong to the same office as the loan officer.`
+            `Client ${client.id} does not belong to the same office as the loan officer.`,
           );
         }
       }
     }
 
     // Check if any client is already in another group
-    const alreadyGrouped = clients.filter((c) => c.group && c.group.id !== groupId);
+    const alreadyGrouped = clients.filter(
+      (c) => c.group && c.group.id !== groupId,
+    );
     if (alreadyGrouped.length > 0) {
       throw new ForbiddenException(
-        `Clients already in another group: ${alreadyGrouped.map((c) => c.id).join(', ')}`,
+        `Clients already in another group: ${alreadyGrouped
+          .map((c) => c.id)
+          .join(', ')}`,
       );
     }
 
@@ -133,7 +149,9 @@ export class GroupService {
       });
     }
     // Update group's client list
-    group.clients = await this.clientRepository.find({ where: { group: { id: groupId } } });
+    group.clients = await this.clientRepository.find({
+      where: { group: { id: groupId } },
+    });
     await this.groupRepository.save(group);
     return response;
   }
@@ -343,6 +361,12 @@ export class GroupService {
       // qb.andWhere(`grp.name ILIKE :search ESCAPE '\\'`, { search: `%${safe}%` });
     }
 
+    if (filters.status?.trim()) {
+      queryBuilder.andWhere('LOWER(status.name) = LOWER(:status)', {
+        status: filters.status.trim(),
+      });
+    }
+
     // Pagination
     queryBuilder
       .orderBy('group.createdAt', pageOptionsDto.order)
@@ -451,7 +475,12 @@ export class GroupService {
       .leftJoin('clients.status', 'status')
       .addSelect(['status.id', 'status.name'])
       .leftJoin('group.center', 'center')
-      .addSelect(['center.id', 'center.name', 'center.centerCode','center.meetingTime'])
+      .addSelect([
+        'center.id',
+        'center.name',
+        'center.centerCode',
+        'center.meetingTime',
+      ])
       .leftJoin('center.meetingDates', 'meetingDates')
       .addSelect(['meetingDates.id', 'meetingDates.week', 'meetingDates.day'])
       .leftJoin('group.staff', 'staff')
@@ -476,7 +505,7 @@ export class GroupService {
       throw new ForbiddenException('You can only access groups in your office');
     }
 
-       const groupWithLeaderId = {
+    const groupWithLeaderId = {
       ...group,
       groupLeaderId: group.groupLeader?.id || null,
     };
@@ -484,133 +513,133 @@ export class GroupService {
     return groupWithLeaderId;
   }
 
- async update(
-  id: string,
-  updateGroupDto: UpdateGroupDto,
-  user: UserEntity,
-): Promise<GroupResponseDto> {
-  const group = await this.groupRepository.createQueryBuilder('group')
-    .leftJoinAndSelect('group.staff', 'staff')
-    .leftJoinAndSelect('staff.office', 'staffOffice')
-    .leftJoinAndSelect('group.clients', 'clients')
-    .leftJoinAndSelect('group.groupLeader', 'groupLeader')
-    .leftJoinAndSelect('group.createdBy', 'createdBy')
-    .leftJoinAndSelect('createdBy.office', 'createdByOffice')
-    .leftJoinAndSelect('group.center', 'center')
-    .leftJoinAndSelect('center.meetingDates', 'meetingDates')
-    .where('group.id = :id', { id })
-    .getOne();
+  async update(
+    id: string,
+    updateGroupDto: UpdateGroupDto,
+    user: UserEntity,
+  ): Promise<GroupResponseDto> {
+    const group = await this.groupRepository
+      .createQueryBuilder('group')
+      .leftJoinAndSelect('group.staff', 'staff')
+      .leftJoinAndSelect('staff.office', 'staffOffice')
+      .leftJoinAndSelect('group.clients', 'clients')
+      .leftJoinAndSelect('group.groupLeader', 'groupLeader')
+      .leftJoinAndSelect('group.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.office', 'createdByOffice')
+      .leftJoinAndSelect('group.center', 'center')
+      .leftJoinAndSelect('center.meetingDates', 'meetingDates')
+      .where('group.id = :id', { id })
+      .getOne();
 
-  if (!group) throw new NotFoundException('Group not found');
-  if (user.role === 'loan_officer' && group.staff.id !== user.id) {
-    throw new ForbiddenException('You can only update your own groups');
-  }
-
-  // Update name
-  if (updateGroupDto.name) {
-    group.name = updateGroupDto.name;
-  }
-
-  // Remove clients (treat clientIds as "to remove")
-  if (updateGroupDto.clientIds && updateGroupDto.clientIds.length > 0) {
-    const clientsToRemove = await this.clientRepository.find({
-      where: { id: In(updateGroupDto.clientIds) },
-      relations: ['group'],
-    });
-
-    if (clientsToRemove.length !== updateGroupDto.clientIds.length) {
-      throw new NotFoundException('One or more clients not found');
+    if (!group) throw new NotFoundException('Group not found');
+    if (user.role === 'loan_officer' && group.staff.id !== user.id) {
+      throw new ForbiddenException('You can only update your own groups');
     }
 
-    // Ensure all clients actually belong to this group
-    for (const client of clientsToRemove) {
-      if (!client.group || client.group.id !== group.id) {
+    // Update name
+    if (updateGroupDto.name) {
+      group.name = updateGroupDto.name;
+    }
+
+    // Remove clients (treat clientIds as "to remove")
+    if (updateGroupDto.clientIds && updateGroupDto.clientIds.length > 0) {
+      const clientsToRemove = await this.clientRepository.find({
+        where: { id: In(updateGroupDto.clientIds) },
+        relations: ['group'],
+      });
+
+      if (clientsToRemove.length !== updateGroupDto.clientIds.length) {
+        throw new NotFoundException('One or more clients not found');
+      }
+
+      // Ensure all clients actually belong to this group
+      for (const client of clientsToRemove) {
+        if (!client.group || client.group.id !== group.id) {
+          throw new ForbiddenException(
+            `Client ${client.id} does not belong to this group`,
+          );
+        }
+      }
+
+      // Null out group reference for removed clients
+      for (const client of clientsToRemove) {
+        client.group = null;
+        await this.clientRepository.save(client);
+      }
+
+      // Remove from group's client list
+      group.clients = group.clients.filter(
+        (c) => !updateGroupDto.clientIds.includes(c.id),
+      );
+
+      group.timeline = this.addTimelineEvent(
+        group.timeline,
+        'clients_removed',
+        `Removed clients from group`,
+        user,
+        { removedClientIds: updateGroupDto.clientIds },
+      );
+    }
+
+    // Update group leader
+    if (updateGroupDto.groupLeaderId) {
+      const newLeader = await this.clientRepository.findOne({
+        where: { id: updateGroupDto.groupLeaderId },
+      });
+
+      if (!newLeader) {
+        throw new NotFoundException('New group leader client not found');
+      }
+
+      // Ensure not already leader of another group
+      const conflict = await this.groupRepository.findOne({
+        where: { groupLeader: { id: newLeader.id }, id: Not(id) },
+      });
+      if (conflict) {
         throw new ForbiddenException(
-          `Client ${client.id} does not belong to this group`,
+          'This client is already a group leader of another group',
         );
       }
-    }
 
-    // Null out group reference for removed clients
-    for (const client of clientsToRemove) {
-      client.group = null;
-      await this.clientRepository.save(client);
-    }
+      // Ensure leader is in current group
+      if (!group.clients.find((c) => c.id === newLeader.id)) {
+        throw new ForbiddenException(
+          'Group leader must be one of the group clients',
+        );
+      }
 
-    // Remove from group's client list
-    group.clients = group.clients.filter(
-      (c) => !updateGroupDto.clientIds.includes(c.id),
-    );
+      const previousLeader = group.groupLeader;
 
-    group.timeline = this.addTimelineEvent(
-      group.timeline,
-      'clients_removed',
-      `Removed clients from group`,
-      user,
-      { removedClientIds: updateGroupDto.clientIds },
-    );
-  }
+      // Clear old leader
+      if (previousLeader) {
+        previousLeader.groupLed = null;
+        await this.clientRepository.save(previousLeader);
+      }
 
-  // Update group leader
-  if (updateGroupDto.groupLeaderId) {
-    const newLeader = await this.clientRepository.findOne({
-      where: { id: updateGroupDto.groupLeaderId },
-    });
+      // Assign new leader
+      group.groupLeader = newLeader;
+      newLeader.groupLed = group;
+      await this.clientRepository.save(newLeader);
 
-    if (!newLeader) {
-      throw new NotFoundException('New group leader client not found');
-    }
-
-    // Ensure not already leader of another group
-    const conflict = await this.groupRepository.findOne({
-      where: { groupLeader: { id: newLeader.id }, id: Not(id) },
-    });
-    if (conflict) {
-      throw new ForbiddenException(
-        'This client is already a group leader of another group',
+      group.timeline = this.addTimelineEvent(
+        group.timeline,
+        'group_leader_changed',
+        `Group leader changed from "${previousLeader?.firstName} ${previousLeader?.lastName}" to "${newLeader.firstName} ${newLeader.lastName}"`,
+        user,
+        {
+          previousLeaderId: previousLeader?.id,
+          previousLeaderName: previousLeader
+            ? `${previousLeader.firstName} ${previousLeader.lastName}`
+            : 'None',
+          newLeaderId: newLeader.id,
+          newLeaderName: `${newLeader.firstName} ${newLeader.lastName}`,
+        },
       );
     }
 
-    // Ensure leader is in current group
-    if (!group.clients.find((c) => c.id === newLeader.id)) {
-      throw new ForbiddenException(
-        'Group leader must be one of the group clients',
-      );
-    }
-
-    const previousLeader = group.groupLeader;
-
-    // Clear old leader
-    if (previousLeader) {
-      previousLeader.groupLed = null;
-      await this.clientRepository.save(previousLeader);
-    }
-
-    // Assign new leader
-    group.groupLeader = newLeader;
-    newLeader.groupLed = group;
-    await this.clientRepository.save(newLeader);
-
-    group.timeline = this.addTimelineEvent(
-      group.timeline,
-      'group_leader_changed',
-      `Group leader changed from "${previousLeader?.firstName} ${previousLeader?.lastName}" to "${newLeader.firstName} ${newLeader.lastName}"`,
-      user,
-      {
-        previousLeaderId: previousLeader?.id,
-        previousLeaderName: previousLeader
-          ? `${previousLeader.firstName} ${previousLeader.lastName}`
-          : 'None',
-        newLeaderId: newLeader.id,
-        newLeaderName: `${newLeader.firstName} ${newLeader.lastName}`,
-      },
-    );
+    const savedGroup = await this.groupRepository.save(group);
+    return new GroupResponseDto(savedGroup);
   }
-
-  const savedGroup = await this.groupRepository.save(group);
-  return new GroupResponseDto(savedGroup);
-}
-
 
   async remove(id: string, user: UserEntity): Promise<void> {
     const group = await this.groupRepository.findOne({
@@ -649,7 +678,7 @@ export class GroupService {
     // Save the timeline update before deletion
     await this.groupRepository.save(group);
 
-  await this.groupRepository.softDelete(id);
+    await this.groupRepository.softDelete(id);
   }
 
   async activate(id: string, user: UserEntity): Promise<GroupEntity> {
@@ -743,7 +772,10 @@ export class GroupService {
    * @param newSystemName - The proposed new system name
    * @throws BadRequestException if validation fails
    */
-  private async validateSystemName(groupId: string, newSystemName: string): Promise<void> {
+  private async validateSystemName(
+    groupId: string,
+    newSystemName: string,
+  ): Promise<void> {
     // Get only the group ID and center code using QueryBuilder for efficiency
     const group = await this.groupRepository
       .createQueryBuilder('group')
@@ -761,20 +793,20 @@ export class GroupService {
 
     // Validate that system name follows the exact pattern: {centerCode}{Number}
     const systemNamePattern = new RegExp(`^${centerCode}\\d+$`);
-    
+
     if (!systemNamePattern.test(newSystemName)) {
       throw new BadRequestException(
-        `System name must follow the pattern '${centerCode}[Number]' (e.g., ${centerCode}1, ${centerCode}2, etc.)`
+        `System name must follow the pattern '${centerCode}[Number]' (e.g., ${centerCode}1, ${centerCode}2, etc.)`,
       );
     }
 
     // Extract the number part to ensure it's valid
     const numberPart = newSystemName.substring(centerCode.length);
     const number = parseInt(numberPart, 10);
-    
+
     if (isNaN(number) || number <= 0 || numberPart !== number.toString()) {
       throw new BadRequestException(
-        `System name must have a valid positive number after the center code '${centerCode}'`
+        `System name must have a valid positive number after the center code '${centerCode}'`,
       );
     }
 
@@ -788,7 +820,7 @@ export class GroupService {
 
     if (existingGroup) {
       throw new BadRequestException(
-        `System name '${newSystemName}' is already in use by another group`
+        `System name '${newSystemName}' is already in use by another group`,
       );
     }
   }
@@ -801,9 +833,9 @@ export class GroupService {
    * @returns The updated group
    */
   async updateSystemName(
-    groupId: string, 
-    updateDto: UpdateGroupSystemNameDto, 
-    user: UserEntity
+    groupId: string,
+    updateDto: UpdateGroupSystemNameDto,
+    user: UserEntity,
   ): Promise<any> {
     // Additional authorization check (controller should already handle this)
     // if (user.role !== RoleType.SUPER_USER) {
@@ -830,15 +862,15 @@ export class GroupService {
 
     // Check if the new system name is the same as current
     if (oldSystemName === updateDto.systemName) {
-      throw new BadRequestException(`System name '${updateDto.systemName}' is already the current system name. No update needed.`);
+      throw new BadRequestException(
+        `System name '${updateDto.systemName}' is already the current system name. No update needed.`,
+      );
     }
 
     // Now get the full group with all necessary relations for updating
     const group = await this.groupRepository.findOne({
       where: { id: groupId },
-      relations: [
-        'center',     
-      ],
+      relations: ['center'],
     });
 
     // Update the system name
