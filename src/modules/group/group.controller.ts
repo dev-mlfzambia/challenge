@@ -137,10 +137,11 @@ export class GroupController {
   @ApiResponse({ status: 200, description: 'Group found.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
  
-  findOne(@Param('id') id: string, @Request() req) {
-    return this.groupService.findOne(id, req.user);
+  async findOne(@Param('id') id: string, @Request() req) {
+    const group = await this.groupService.findOne(id, req.user);
+    return new GroupDto(group);
   }
-}
+
 
   @Patch(':id')
   @Auth([RoleType.LOAN_OFFICER])
