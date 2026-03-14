@@ -342,6 +342,9 @@ export class GroupService {
       // const safe = term.replace(/[\\%_]/g, '\\$&');
       // qb.andWhere(`grp.name ILIKE :search ESCAPE '\\'`, { search: `%${safe}%` });
     }
+    if (filters.status) {
+      queryBuilder.andWhere('status.name = :status', { status: filters.status });
+    }
 
     // Pagination
     queryBuilder
