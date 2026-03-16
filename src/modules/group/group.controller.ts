@@ -9,7 +9,6 @@ import {
   Param,
   Delete,
   Request,
-  UseGuards,
   UseFilters,
   HttpCode,
   HttpStatus,
@@ -20,8 +19,6 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { UpdateGroupSystemNameDto } from './dto/update-group-system-name.dto';
 import { UpdateGroupSystemNameResponseDto } from './dto/update-group-system-name-response.dto';
 import { Auth } from '../../decorators/http.decorators';
-import { RolesGuard } from '../../guards/roles.guard';
-import { AuthGuard } from '../../guards/auth.guard';
 import { RoleType } from '../../constants/role-type';
 import { TypeOrmUniqueExceptionFilter } from '../../filters/typeorm-unique-exception.filter';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -44,23 +41,35 @@ interface GenericMyRequest<T> extends Request {
 @ApiTags('Group')
 @UseFilters(TypeOrmUniqueExceptionFilter)
 @Controller('api/v1/groups')
-@UseGuards(AuthGuard(), RolesGuard)
 export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @Post(':id/add-clients')
   @Auth([RoleType.LOAN_OFFICER])
   @ApiOperation({ summary: 'Add clients to a group' })
-  @ApiResponse({ status: 200, description: 'Clients added to group successfully.' })
-  @ApiResponse({ status: 400, description: 'Invalid request or validation failed.' })
-  @ApiResponse({ status: 403, description: 'clients already in another group.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clients added to group successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request or validation failed.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'clients already in another group.',
+  })
   @ApiResponse({ status: 404, description: 'Group or clients not found.' })
   async addClientsToGroup(
     @Param('id') id: string,
     @Body() addClientsDto: AddClientsToGroupDto,
     @Request() req,
   ) {
-    return this.groupService.addClientsToGroup(id, addClientsDto.clientIds, req.user);
+    return this.groupService.addClientsToGroup(
+      id,
+      addClientsDto.clientIds,
+      req.user,
+    );
   }
 
   @Post()
@@ -136,11 +145,9 @@ export class GroupController {
   @ApiOperation({ summary: 'Get a group by ID' })
   @ApiResponse({ status: 200, description: 'Group found.' })
   @ApiResponse({ status: 404, description: 'Group not found.' })
- 
   findOne(@Param('id') id: string, @Request() req) {
     return this.groupService.findOne(id, req.user);
   }
-}
 
   @Patch(':id')
   @Auth([RoleType.LOAN_OFFICER])
@@ -183,38 +190,40 @@ export class GroupController {
   }
 
   @Patch(':id/system-name')
-  @Auth([RoleType.SUPER_USER,RoleType.BRANCH_MANAGER,])
+  @Auth([RoleType.SUPER_USER, RoleType.BRANCH_MANAGER])
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update group system name (Super User only)',
-    description: 'Updates the system name of a group. The new name must start with the center code and be unique across all groups.'
+    description:
+      'Updates the system name of a group. The new name must start with the center code and be unique across all groups.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Group system name updated successfully.',
     type: UpdateGroupSystemNameResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Validation error - system name must start with center code or already exists.' 
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation error - system name must start with center code or already exists.',
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Forbidden - only super users can update system names.' 
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - only super users can update system names.',
   })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Group not found.' 
+  @ApiResponse({
+    status: 404,
+    description: 'Group not found.',
   })
   async updateSystemName(
     @Param('id') id: string,
     @Body() updateGroupSystemNameDto: UpdateGroupSystemNameDto,
-    @Request() req
+    @Request() req,
   ) {
     return await this.groupService.updateSystemName(
-      id, 
-      updateGroupSystemNameDto, 
-      req.user
+      id,
+      updateGroupSystemNameDto,
+      req.user,
     );
   }
 }
